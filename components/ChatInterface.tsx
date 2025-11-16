@@ -23,6 +23,8 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const conversationActive = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef(false);
 
   // Detect if we're on mobile
   const isMobile = () => {
@@ -52,6 +54,19 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
 
   // Setup speech recognition
   useEffect(() => {
+    // Initialize Audio Context on first user interaction for mobile
+    const unlockAudio = () => {
+      if (!audioUnlockedRef.current && typeof window !== 'undefined') {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current.resume();
+        audioUnlockedRef.current = true;
+        console.log('Audio context unlocked');
+      }
+    };
+
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    document.addEventListener('click', unlockAudio, { once: true });
+
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -201,27 +216,26 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
           audio.onerror = (e) => {
             console.error('Audio playback error:', e);
             setIsSpeaking(false);
-            conversationActive.current = false;
+            if (conversationActive.current) {
+              startListening();
+            }
           };
+          
+          // Ensure audio context is resumed before playing (iOS requirement)
+          if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
           
           try {
             await audio.play();
             console.log('Audio started playing');
           } catch (playError) {
-            console.warn('Audio playback failed (likely mobile autoplay policy):', playError);
+            console.warn('Audio playback failed:', playError);
             setIsSpeaking(false);
             
-            // On mobile, we can't auto-play audio, so show a message and continue
-            if (isMobile()) {
-              setChatMessages(prev => [...prev, { 
-                text: '(I can hear you but can\'t speak back on mobile - please read my messages)', 
-                sender: 'ai', 
-                timestamp: Date.now() 
-              }]);
-            }
-            
+            // Continue conversation even if audio fails
             if (conversationActive.current) {
-              console.log('Skipping TTS due to autoplay restrictions, starting listening');
+              console.log('Skipping TTS, starting listening');
               setTimeout(() => {
                 if (conversationActive.current) {
                   startListening();

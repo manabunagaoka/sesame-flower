@@ -156,7 +156,14 @@ export default function HomePage() {
       }}
     >
       {/* Header */}
-      <header className="flex justify-between items-center p-4 bg-[#5cb85c] border-b border-green-600" style={{ flexShrink: 0 }}>
+      <header 
+        className="flex justify-between items-center p-4 bg-[#5cb85c]" 
+        style={{ 
+          flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+        }}
+      >
         <h1 className="text-xl font-semibold text-white">123 Sesame Street</h1>
         <button className="p-2 hover:bg-green-600 rounded-lg transition-colors">
           <MoreVertical size={20} className="text-white" />
@@ -166,7 +173,13 @@ export default function HomePage() {
       {/* Main Layout - Upper Content + Lower Wheel */}
       <main className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
         {/* Content Window - Upper Half */}
-        <div className="flex-1 bg-white overflow-y-auto p-4" style={{ minHeight: 0 }}>
+        <div 
+          className="flex-1 bg-white overflow-y-auto p-4" 
+          style={{ 
+            minHeight: 0,
+            boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.06)'
+          }}
+        >
           {!selectedContent ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <img src="/gif/elmo.gif" alt="Elmo" className="w-32 h-32 object-cover rounded-full" />

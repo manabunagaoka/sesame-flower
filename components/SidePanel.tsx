@@ -89,7 +89,7 @@ export default function SidePanel({ isOpen, onClose, title, content, onContentSe
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
               <h2 className="text-xl font-semibold text-gray-800 capitalize">
-                {isChat ? 'Chat' : title}
+                {isChat ? 'Speak with Flower' : title}
               </h2>
               <button
                 onClick={onClose}

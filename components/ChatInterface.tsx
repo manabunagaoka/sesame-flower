@@ -435,18 +435,20 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       </div>
       
       <div 
-        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+        className="absolute bottom-0 left-0 right-0 bg-white"
         style={{
           position: 'absolute',
           zIndex: 110,
           paddingTop: '16px',
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
           paddingLeft: '16px',
-          paddingRight: '16px'
+          paddingRight: '16px',
+          boxShadow: '0 -4px 12px -4px rgba(0, 0, 0, 0.08)',
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)'
         }}
       >
         <div 
-          className="flex items-center gap-3 pb-3 border-b border-gray-200"
+          className="flex items-center gap-3 pb-2"
         >
           <input
             ref={inputRef}

@@ -230,14 +230,23 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
           
           // Set source and load
           audio.src = data.audioUrl;
-          await audio.load();
+          
+          // Try to load, but don't wait for it to avoid blocking
+          audio.load();
           
           // Ensure audio context is resumed before playing (iOS requirement)
-          if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-            await audioContextRef.current.resume();
+          if (audioContextRef.current) {
+            try {
+              if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+              }
+            } catch (err) {
+              console.warn('AudioContext resume failed:', err);
+            }
           }
           
           try {
+            console.log('Attempting to play audio...');
             await audio.play();
             console.log('Audio started playing');
           } catch (playError) {
@@ -246,12 +255,12 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
             
             // Continue conversation even if audio fails
             if (conversationActive.current) {
-              console.log('Skipping TTS, starting listening');
+              console.log('Skipping TTS, starting listening immediately');
               setTimeout(() => {
                 if (conversationActive.current) {
                   startListening();
                 }
-              }, 500);
+              }, 100);
             }
           }
         } else {

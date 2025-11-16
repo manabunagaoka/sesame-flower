@@ -71,6 +71,13 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     document.addEventListener('touchstart', unlockAudio, { once: true });
     document.addEventListener('click', unlockAudio, { once: true });
 
+    // Debug: Check API availability
+    console.log('=== Voice API Check ===');
+    console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
+    console.log('AudioContext available:', 'AudioContext' in window || 'webkitAudioContext' in window);
+    console.log('User agent:', navigator.userAgent);
+    console.log('Is standalone:', window.matchMedia('(display-mode: standalone)').matches);
+    
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();

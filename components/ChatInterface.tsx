@@ -204,26 +204,33 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         console.log('TTS response data:', data);
         
         if (data.audioUrl) {
-          const audio = new Audio(data.audioUrl);
-          audioRef.current = audio;
+          // Reuse existing audio element if available (iOS requirement)
+          let audio = audioRef.current;
+          if (!audio) {
+            audio = new Audio();
+            audioRef.current = audio;
+            
+            audio.onended = () => {
+              console.log('Audio playback ended');
+              setIsSpeaking(false);
+              if (conversationActive.current) {
+                console.log('Starting listening after TTS finished');
+                startListening();
+              }
+            };
+            
+            audio.onerror = (e) => {
+              console.error('Audio playback error:', e);
+              setIsSpeaking(false);
+              if (conversationActive.current) {
+                startListening();
+              }
+            };
+          }
           
-          audio.onended = () => {
-            console.log('Audio playback ended');
-            setIsSpeaking(false);
-            audioRef.current = null;
-            if (conversationActive.current) {
-              console.log('Starting listening after TTS finished');
-              startListening();
-            }
-          };
-          
-          audio.onerror = (e) => {
-            console.error('Audio playback error:', e);
-            setIsSpeaking(false);
-            if (conversationActive.current) {
-              startListening();
-            }
-          };
+          // Set source and load
+          audio.src = data.audioUrl;
+          await audio.load();
           
           // Ensure audio context is resumed before playing (iOS requirement)
           if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
@@ -289,6 +296,28 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     
     console.log('Starting voice conversation');
     conversationActive.current = true;
+    
+    // Pre-create audio element on user interaction (iOS requirement)
+    if (!audioRef.current) {
+      console.log('Initializing audio element for iOS');
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => {
+        console.log('Audio playback ended');
+        setIsSpeaking(false);
+        if (conversationActive.current) {
+          console.log('Starting listening after TTS finished');
+          startListening();
+        }
+      };
+      audioRef.current.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsSpeaking(false);
+        if (conversationActive.current) {
+          startListening();
+        }
+      };
+    }
+    
     const greeting = "Hi! How are you doing?";
     
     // Add the greeting to chat history so user can see it

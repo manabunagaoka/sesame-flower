@@ -274,7 +274,13 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   };
 
   const startListening = () => {
-    if (!recognitionRef.current || isListening || isSpeaking) return;
+    if (!recognitionRef.current) {
+      alert('Speech recognition not initialized. Web Speech API may not be available in PWA mode.');
+      console.error('Recognition not initialized');
+      return;
+    }
+    
+    if (isListening || isSpeaking) return;
     
     try {
       setIsListening(true);
@@ -287,7 +293,12 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
 
   const startVoiceConversation = async () => {
     console.log('Voice button clicked, conversationActive:', conversationActive.current);
-    alert('Voice button clicked! conversationActive: ' + conversationActive.current);
+    
+    // Check if Web Speech API is available
+    if (typeof window === 'undefined' || !('webkitSpeechRecognition' in window)) {
+      alert('Voice recognition not available. Please use Safari browser instead of PWA mode.');
+      return;
+    }
     
     if (conversationActive.current) {
       console.log('Stopping conversation');
@@ -296,7 +307,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     }
     
     console.log('Starting voice conversation');
-    alert('About to start voice conversation');
     conversationActive.current = true;
     
     // Pre-create audio element on user interaction (iOS requirement)

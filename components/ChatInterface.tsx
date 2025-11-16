@@ -54,9 +54,23 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
 
   // Setup speech recognition
   useEffect(() => {
-    // Don't create AudioContext - it can interfere with other media playback in PWA mode
-    // The Audio element works fine without it on iOS
-    
+    // Initialize Audio Context on first user interaction for mobile
+    const unlockAudio = () => {
+      if (!audioUnlockedRef.current && typeof window !== 'undefined') {
+        try {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current.resume();
+          audioUnlockedRef.current = true;
+          console.log('Audio context unlocked');
+        } catch (error) {
+          console.warn('Failed to create AudioContext:', error);
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    document.addEventListener('click', unlockAudio, { once: true });
+
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -216,9 +230,12 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
           
           // Set source and load
           audio.src = data.audioUrl;
+          await audio.load();
           
-          // Try to load, but don't wait for it to avoid blocking
-          audio.load();
+          // Ensure audio context is resumed before playing (iOS requirement)
+          if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
           
           try {
             console.log('Attempting to play audio...');

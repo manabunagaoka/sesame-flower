@@ -147,7 +147,6 @@ export default function HomePage() {
       style={{
         overscrollBehavior: 'none',
         WebkitOverflowScrolling: 'auto',
-        height: '100vh',
         height: '100dvh',
         width: '100vw',
         position: 'fixed',

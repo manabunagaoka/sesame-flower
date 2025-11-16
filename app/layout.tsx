@@ -40,16 +40,13 @@ export default function RootLayout({
         style={{
           overscrollBehavior: 'none',
           WebkitOverflowScrolling: 'auto',
-          height: '100vh',
           height: '100dvh',
         }}
       >
         <div 
           id="__next"
           style={{
-            minHeight: '100vh',
             minHeight: '100dvh',
-            height: '100vh',
             height: '100dvh',
             display: 'flex',
             flexDirection: 'column',

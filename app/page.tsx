@@ -179,21 +179,24 @@ export default function HomePage() {
               </motion.p>
             </div>
           ) : (
-            <div className="relative w-full h-full">
+            <div className="h-full flex flex-col">
               {selectedContent.videoId ? (
                 <>
-                  <iframe
-                    src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?videoFoam=true`}
-                    title={selectedContent.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    allowFullScreen
-                    className="absolute top-0 left-0 w-full h-full"
-                    style={{ border: 'none' }}
-                  />
-                  {/* Title overlay at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pointer-events-none">
-                    <h2 className="text-sm font-semibold text-white">{selectedContent.title}</h2>
-                    <p className="text-xs text-white/80">{selectedContent.description}</p>
+                  {/* Video container with aspect ratio */}
+                  <div className="flex-1 relative bg-black">
+                    <iframe
+                      src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?playsinline=true&videoFoam=false`}
+                      title={selectedContent.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      className="absolute top-0 left-0 w-full h-full"
+                      style={{ border: 'none' }}
+                    />
+                  </div>
+                  {/* Title section below video */}
+                  <div className="flex-shrink-0 bg-white px-4 py-2 border-t border-gray-200">
+                    <h2 className="text-sm font-semibold text-gray-900">{selectedContent.title}</h2>
+                    <p className="text-xs text-gray-600">{selectedContent.description}</p>
                   </div>
                 </>
               ) : (

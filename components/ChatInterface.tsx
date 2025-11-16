@@ -274,31 +274,23 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   };
 
   const startListening = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition not initialized. Web Speech API may not be available in PWA mode.');
-      console.error('Recognition not initialized');
+    if (!recognitionRef.current || isListening || isSpeaking) {
+      console.log('Cannot start listening:', { hasRecognition: !!recognitionRef.current, isListening, isSpeaking });
       return;
     }
     
-    if (isListening || isSpeaking) return;
-    
     try {
+      console.log('Starting speech recognition...');
       setIsListening(true);
       recognitionRef.current.start();
     } catch (error) {
-      console.log('Recognition already active');
+      console.log('Recognition error:', error);
       setIsListening(false);
     }
   };
 
   const startVoiceConversation = async () => {
     console.log('Voice button clicked, conversationActive:', conversationActive.current);
-    
-    // Check if Web Speech API is available
-    if (typeof window === 'undefined' || !('webkitSpeechRecognition' in window)) {
-      alert('Voice recognition not available. Please use Safari browser instead of PWA mode.');
-      return;
-    }
     
     if (conversationActive.current) {
       console.log('Stopping conversation');

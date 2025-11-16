@@ -57,10 +57,14 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     // Initialize Audio Context on first user interaction for mobile
     const unlockAudio = () => {
       if (!audioUnlockedRef.current && typeof window !== 'undefined') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current.resume();
-        audioUnlockedRef.current = true;
-        console.log('Audio context unlocked');
+        try {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current.resume();
+          audioUnlockedRef.current = true;
+          console.log('Audio context unlocked');
+        } catch (error) {
+          console.warn('Failed to create AudioContext:', error);
+        }
       }
     };
 

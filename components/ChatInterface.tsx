@@ -214,7 +214,7 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
             // On mobile, we can't auto-play audio, so show a message and continue
             if (isMobile()) {
               setChatMessages(prev => [...prev, { 
-                text: '🔊 (Audio playback not available on mobile - continuing with voice recognition)', 
+                text: '(I can hear you but can\'t speak back on mobile - please read my messages)', 
                 sender: 'ai', 
                 timestamp: Date.now() 
               }]);

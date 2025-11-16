@@ -7,7 +7,7 @@ import {
   Phone, Heart, AlertTriangle, Stethoscope, Users, Users2, Baby, Coffee,
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
-  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines
+  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, Flower2
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ContentItem } from '@/lib/types';
@@ -19,7 +19,7 @@ const contentIconMap = {
   Phone, Heart, AlertTriangle, Stethoscope, Users, Users2, Baby, Coffee,
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
-  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines
+  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, Flower2
 };
 
 interface SidePanelProps {
@@ -27,9 +27,10 @@ interface SidePanelProps {
   onClose: () => void;
   title: string;
   content: ContentItem[];
+  onContentSelect: (item: ContentItem) => void;
 }
 
-export default function SidePanel({ isOpen, onClose, title, content }: SidePanelProps) {
+export default function SidePanel({ isOpen, onClose, title, content, onContentSelect }: SidePanelProps) {
   const [showChat, setShowChat] = useState(false);
   const isConnect = title.toLowerCase() === 'connect';
   const isChat = title.toLowerCase() === 'chat';
@@ -130,24 +131,42 @@ export default function SidePanel({ isOpen, onClose, title, content }: SidePanel
                         'cursor-pointer group'
                       )}
                       onClick={() => {
+                        console.log('Item clicked:', item);
                         if ((isConnect && (item.title.toLowerCase().includes('chat') || item.title.toLowerCase().includes('support') || item.title.toLowerCase().includes('talk'))) || isChat) {
                           setShowChat(true);
+                        } else {
+                          console.log('Calling onContentSelect with:', item);
+                          onContentSelect(item);
+                          onClose();
                         }
                       }}
                     >
-                      {/* Icon */}
-                      <div className={clsx(
-                        'flex items-center justify-center rounded-full',
-                        'w-10 h-10 bg-white border border-gray-200',
-                        'group-hover:border-gray-300 transition-colors duration-200'
-                      )}>
-                        {IconComponent && (
-                          <IconComponent 
-                            size={18} 
-                            className="text-gray-600 group-hover:text-gray-700" 
+                      {/* Icon or Thumbnail */}
+                      {item.videoId && item.thumbnail ? (
+                        <div className="relative w-20 h-14 flex-shrink-0 rounded overflow-hidden border border-gray-200">
+                          <img 
+                            src={item.thumbnail} 
+                            alt={item.title}
+                            className="w-full h-full object-cover"
                           />
-                        )}
-                      </div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                            <PlayCircle size={24} className="text-white" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={clsx(
+                          'flex items-center justify-center rounded-full',
+                          'w-10 h-10 bg-white border border-gray-200',
+                          'group-hover:border-gray-300 transition-colors duration-200'
+                        )}>
+                          {IconComponent && (
+                            <IconComponent 
+                              size={18} 
+                              className="text-gray-600 group-hover:text-gray-700" 
+                            />
+                          )}
+                        </div>
+                      )}
 
                       {/* Content */}
                       <div className="ml-3 flex-1 min-w-0">

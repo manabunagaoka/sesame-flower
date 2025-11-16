@@ -18,7 +18,15 @@ export default function HomePage() {
     content: ContentItem[];
   }>({ title: '', content: [] });
   const [wheelAngle, setWheelAngle] = useState<number>(0);
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [greeting, setGreeting] = useState('Good evening');
+
+  // Debug logging
+  useEffect(() => {
+    if (selectedContent) {
+      console.log('Selected content:', selectedContent);
+    }
+  }, [selectedContent]);
 
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
@@ -66,7 +74,7 @@ export default function HomePage() {
 
   // Update selected menu based on wheel position
   useEffect(() => {
-    if (isMenuOpen) {
+    if (isMenuOpen && wheelAngle !== 0) {
       const closestItem = findClosestMenuItem(wheelAngle);
       setSelectedMenu(closestItem.id);
     }
@@ -88,11 +96,13 @@ export default function HomePage() {
   };
 
   const handleWheelActivate = () => {
-    if (selectedMenu === 'more') {
-      // Switch to more submenu
-      setMenuState('more');
-      setWheelAngle(0); // Reset for submenu
-    } else if (selectedMenu) {
+    // COMMENTED OUT: More submenu functionality
+    // if (selectedMenu === 'more') {
+    //   // Switch to more submenu
+    //   setMenuState('more');
+    //   setWheelAngle(0); // Reset for submenu
+    // } else 
+    if (selectedMenu) {
       // Open side panel with content
       const content = MENU_CONTENT[selectedMenu] || [];
       setSidePanelContent({
@@ -111,11 +121,12 @@ export default function HomePage() {
       setSelectedMenu(menuId);
       
       // Handle menu action directly based on the clicked item
-      if (menuId === 'more') {
-        // Switch to more submenu
-        setMenuState('more');
-        setWheelAngle(0); // Reset for submenu
-      } else {
+      // COMMENTED OUT: More submenu functionality
+      // if (menuId === 'more') {
+      //   // Switch to more submenu
+      //   setMenuState('more');
+      //   setWheelAngle(0); // Reset for submenu
+      // } else {
         // Open side panel with content
         const content = MENU_CONTENT[menuId] || [];
         setSidePanelContent({
@@ -123,7 +134,7 @@ export default function HomePage() {
           content,
         });
         setSidePanelOpen(true);
-      }
+      // } // COMMENTED OUT: Closing brace for More submenu
     }
   };
 
@@ -143,6 +154,7 @@ export default function HomePage() {
       // If side panel is open, close it and return to menu
       setSidePanelOpen(false);
       setSelectedMenu('');
+      setSelectedContent(null);
     } else if (menuState === 'more') {
       // If in more submenu, return to main menu
       setMenuState('main');
@@ -153,6 +165,7 @@ export default function HomePage() {
       setMenuState('closed');
       setSelectedMenu('');
       setWheelAngle(0);
+      setSelectedContent(null);
     }
   };
 
@@ -181,16 +194,42 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Content Window - Upper Half */}
         <div className="flex-1 bg-white overflow-y-auto p-4">
-          {!isMenuOpen && (
-            <div className="flex items-center justify-center h-full">
+          {console.log('Rendering content area, selectedContent:', selectedContent)}
+          {!selectedContent ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <img src="/gif/elmo.gif" alt="Elmo" className="w-32 h-32 object-cover rounded-full" />
               <motion.p 
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: ANIMATION_DURATION }}
                 className="text-2xl text-gray-600 font-light text-center"
               >
-                {greeting}
+                Hi. Let's play!
               </motion.p>
+            </div>
+          ) : (
+            <div className="relative w-full h-full">
+              {selectedContent.videoId ? (
+                <>
+                  <iframe
+                    src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?videoFoam=true`}
+                    title={selectedContent.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    className="absolute top-0 left-0 w-full h-full"
+                    style={{ border: 'none' }}
+                  />
+                  {/* Title overlay at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 pointer-events-none">
+                    <h2 className="text-sm font-semibold text-white">{selectedContent.title}</h2>
+                    <p className="text-xs text-white/80">{selectedContent.description}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <p>No video available</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -235,6 +274,8 @@ export default function HomePage() {
                 menuState={menuState}
                 onActivate={handleWheelActivate}
                 onBack={handleBack}
+                selectedMenu={selectedMenu}
+                menuItems={currentMenuItems}
               />
             </div>
           </div>
@@ -247,6 +288,11 @@ export default function HomePage() {
         onClose={handleCloseSidePanel}
         title={sidePanelContent.title}
         content={sidePanelContent.content}
+        onContentSelect={(item) => {
+          console.log('onContentSelect called in page.tsx with:', item);
+          setSelectedContent(item);
+          console.log('setSelectedContent called');
+        }}
       />
     </div>
   );

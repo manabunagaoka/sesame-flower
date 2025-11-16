@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   
   try {
     const mp3 = await openai.audio.speech.create({
-      model: "tts-1", // or "tts-1-hd" for better quality
+      model: "tts-1", // Fastest model - optimized for speed
       voice: voice,
       input: text,
       speed: speed // 0.25 to 4.0, default 1.0

@@ -18,7 +18,9 @@ import {
   PlayCircle,
   Grid3x3,
   Plane,
-  AudioLines
+  AudioLines,
+  Flower2,
+  Gamepad2
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MAIN_MENU_ITEMS, MORE_MENU_ITEMS, MENU_RADIUS, MENU_BUTTON_SIZE, ANIMATION_DURATION, STAGGER_DELAY } from '@/lib/constants';
@@ -41,6 +43,8 @@ const iconMap = {
   Grid3x3,
   Plane,
   AudioLines,
+  Flower2,
+  Gamepad2,
 };
 
 interface MenuWheelProps {

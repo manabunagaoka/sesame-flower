@@ -19,9 +19,9 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 45, // 1:30 position
   },
   {
-    id: 'services',
-    title: 'Services',
-    icon: 'Wrench',
+    id: 'learning',
+    title: 'Learning',
+    icon: 'GraduationCap',
     color: '#a55eea',
     borderColor: '#8854d0',
     angle: 90, // 3 o'clock
@@ -37,9 +37,9 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     id: 'chat',
     title: 'Chat',
-    icon: 'AudioLines',
-    color: '#45b7d1',
-    borderColor: '#0984e3',
+    icon: 'Flower2',
+    color: '#f9ca24',
+    borderColor: '#e1b12c',
     angle: 180, // 6 o'clock
   },
   {
@@ -51,20 +51,21 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 225, // 7:30 position
   },
   {
-    id: 'messages',
-    title: 'Messages',
-    icon: 'MessageCircle',
+    id: 'games',
+    title: 'Games',
+    icon: 'Gamepad2',
     color: '#45b7d1',
     borderColor: '#0984e3',
     angle: 270, // 9 o'clock
   },
   {
-    id: 'more',
-    title: 'More',
-    icon: 'MoreHorizontal',
+    id: 'market',
+    title: 'Market',
+    icon: 'ShoppingBag',
     color: '#778ca3',
     borderColor: '#57606f',
     angle: 315, // 10:30 position
+    // isSubmenu: true, // Commented out - no submenu for now
   },
 ];
 
@@ -152,11 +153,6 @@ export const MENU_CONTENT: MenuContent = {
   ],
   connect: [
     {
-      icon: 'MessageCircle',
-      title: 'Chat Support',
-      description: 'Get help and support',
-    },
-    {
       icon: 'Users',
       title: 'Neighbors',
       description: '12 online',
@@ -177,26 +173,41 @@ export const MENU_CONTENT: MenuContent = {
       description: 'Local parent meetups',
     },
   ],
-  services: [
+  learning: [
     {
-      icon: 'Sparkles',
-      title: 'Cleaning',
-      description: 'House cleaning services',
+      icon: 'PlayCircle',
+      title: 'Sunny Day',
+      description: 'Educational content',
+      videoId: 'db1gg8uttq',
+      thumbnail: 'https://embed-ssl.wistia.com/deliveries/358950907ded006a78fdd2eb9270f7f591c75aa7.jpg?image_crop_resized=960x540',
     },
     {
-      icon: 'Car',
-      title: 'Transport',
-      description: 'Rides and delivery',
+      icon: 'PlayCircle',
+      title: 'Letter of the Day',
+      description: 'Learning letters with friends',
+      videoId: 'zlysy8w3hj',
+      thumbnail: 'https://embed-ssl.wistia.com/deliveries/0e710e0c2894919b0f99c872addf96e065584c46.jpg?image_crop_resized=960x540',
     },
     {
-      icon: 'UtensilsCrossed',
-      title: 'Meals',
-      description: 'Meal preparation',
+      icon: 'PlayCircle',
+      title: 'Dinosaurs - Elmo\'s World',
+      description: 'Learn about dinosaurs',
+      videoId: '25hcausk6n',
+      thumbnail: 'https://embed-ssl.wistia.com/deliveries/b8848a693dd12311533b49f81890fed4adbc01b4.jpg?image_crop_resized=640x360',
     },
     {
-      icon: 'BookOpen',
-      title: 'Tutoring',
-      description: 'Educational support',
+      icon: 'PlayCircle',
+      title: 'Verbs - The Yip Yips',
+      description: 'Learning action words',
+      videoId: 'zqtrw5c0ft',
+      thumbnail: 'https://embed-ssl.wistia.com/deliveries/b02e79d591cd470d164f9a170e05dd026986f155.jpg?image_crop_resized=640x360',
+    },
+    {
+      icon: 'PlayCircle',
+      title: 'Mystery Word',
+      description: 'Word discovery game',
+      videoId: '6jwhzsz4vw',
+      thumbnail: 'https://embed-ssl.wistia.com/deliveries/a7decce16a3307c9a3bc11de2b08b296a1bbad08.jpg?image_crop_resized=960x540',
     },
   ],
   activities: [
@@ -258,29 +269,36 @@ export const MENU_CONTENT: MenuContent = {
       time: '6:00 PM',
     },
   ],
-  messages: [
+  games: [
     {
-      icon: 'User',
-      title: 'Emma',
-      description: 'On my way',
+      icon: 'PlayCircle',
+      title: 'Mecha Builders',
+      description: 'Build and create',
     },
     {
-      icon: 'Users',
-      title: 'Group',
-      description: 'New message',
+      icon: 'Grid3x3',
+      title: 'Matching',
+      description: 'Match pairs',
     },
     {
-      icon: 'Building',
-      title: 'Agency',
-      description: 'Confirmed',
+      icon: 'Zap',
+      title: 'Memory',
+      description: 'Test your memory',
     },
     {
-      icon: 'PenTool',
-      title: 'Compose',
-      description: 'New message',
+      icon: 'Plus',
+      title: 'Coming Soon',
+      description: 'More games on the way',
     },
   ],
-  // More submenu items - all show "Coming Soon"
+  market: [
+    {
+      icon: 'ShoppingBag',
+      title: 'Coming Soon',
+      description: 'Marketplace features coming',
+    },
+  ],
+  // More submenu items - COMMENTED OUT
   onboarding: [
     {
       icon: 'User',

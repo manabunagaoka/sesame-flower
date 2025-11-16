@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Mic, AudioLines, Send, X } from 'lucide-react';
 
 const VOICE_CHOICE = 'sage';
-const VOICE_SPEED = 1.0;
+const VOICE_SPEED = 1.05;
 
 interface ChatInterfaceProps {
   inPanel?: boolean;
@@ -130,7 +130,7 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: text,
-          context: timeContext + 'You are Flower, a friendly and helpful home companion for families. Be warm, cheerful, and supportive. Use clear, simple language that everyone can understand. Keep responses brief and natural. Be encouraging and positive. Adapt your tone based on what the user shares - if they sound young, keep it simple; if they sound like an adult, respond naturally. Never assume the user is a child.'
+          context: timeContext + 'You are Flower - friendly and cheerful! Use I/me. Talk naturally like a friend. Be warm and positive but keep it simple. No drama, no over-the-top language, no emojis. Just be nice and friendly. Examples: "That\'s great!" "What happened?" "Tell me about it!" "Sounds good!" Keep it real and easy.'
         })
       });
       
@@ -146,8 +146,17 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       }
     } catch (error) {
       console.error('Chat error:', error);
+      setChatMessages(prev => [...prev, { 
+        text: 'Sorry, I had trouble responding. Can you try again?', 
+        sender: 'ai', 
+        timestamp: Date.now() 
+      }]);
+      conversationActive.current = false;
+      setIsListening(false);
+      setIsSpeaking(false);
     } finally {
       setIsProcessing(false);
+      // Don't stop conversation mode here - let it continue
       // Restore focus after processing completes
       setTimeout(() => {
         if (inputRef.current && !isVoice) {

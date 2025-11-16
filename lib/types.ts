@@ -13,6 +13,8 @@ export interface ContentItem {
   title: string;
   description: string;
   time?: string;
+  videoId?: string;
+  thumbnail?: string;
 }
 
 export interface MenuContent {

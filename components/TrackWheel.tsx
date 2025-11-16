@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Compass } from 'lucide-react';
+import { Compass, Play, AlertCircle, Users, GraduationCap, Calendar, Flower2, Clock, Gamepad2, ShoppingBag } from 'lucide-react';
+import { MenuItem } from '@/lib/types';
 
 interface TrackWheelProps {
   isMenuOpen: boolean;
@@ -12,6 +13,8 @@ interface TrackWheelProps {
   menuState: 'closed' | 'main' | 'more';
   onActivate: () => void;
   onBack: () => void;
+  selectedMenu: string;
+  menuItems: MenuItem[];
 }
 
 export default function TrackWheel({ 
@@ -21,7 +24,9 @@ export default function TrackWheel({
   currentAngle,
   menuState,
   onActivate,
-  onBack
+  onBack,
+  selectedMenu,
+  menuItems
 }: TrackWheelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [clickCount, setClickCount] = useState(0);
@@ -119,6 +124,38 @@ export default function TrackWheel({
     updateAngleFromEvent(e);
   };
 
+  // Render the appropriate icon based on menu state
+  const renderCenterIcon = () => {
+    if (!isMenuOpen) {
+      return <Play size={40} className="text-gray-600" />;
+    }
+
+    // Only show menu icon if a menu is actually selected (not empty string)
+    if (!selectedMenu) {
+      return <Play size={40} className="text-gray-600" />;
+    }
+
+    // Find the selected menu item
+    const selectedItem = menuItems.find(item => item.id === selectedMenu);
+    if (!selectedItem) {
+      return <Play size={40} className="text-gray-600" />;
+    }
+
+    // Map icon names to icon components
+    const iconMap: { [key: string]: React.ReactNode } = {
+      'AlertCircle': <AlertCircle size={40} style={{ color: selectedItem.color }} />,
+      'Users': <Users size={40} style={{ color: selectedItem.color }} />,
+      'GraduationCap': <GraduationCap size={40} style={{ color: selectedItem.color }} />,
+      'Calendar': <Calendar size={40} style={{ color: selectedItem.color }} />,
+      'Flower2': <Flower2 size={40} style={{ color: selectedItem.color }} />,
+      'Clock': <Clock size={40} style={{ color: selectedItem.color }} />,
+      'Gamepad2': <Gamepad2 size={40} style={{ color: selectedItem.color }} />,
+      'ShoppingBag': <ShoppingBag size={40} style={{ color: selectedItem.color }} />,
+    };
+
+    return iconMap[selectedItem.icon] || <Play size={40} className="text-gray-600" />;
+  };
+
   return (
     <div className="relative flex items-center justify-center">
       {/* Track Ring - NO DOT, just the ring for dragging */}
@@ -156,9 +193,7 @@ export default function TrackWheel({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        {!isMenuOpen && (
-          <span className="font-bold text-lg text-gray-700">Hi</span>
-        )}
+        {renderCenterIcon()}
       </motion.button>
     </div>
   );

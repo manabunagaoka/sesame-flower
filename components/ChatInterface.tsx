@@ -357,14 +357,16 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
           streamRef.current = null;
         }
         
-        // Create audio blob
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        console.log('Audio blob size:', audioBlob.size);
+        // Create audio blob - try different formats for iOS compatibility
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        console.log('Audio blob:', { size: audioBlob.size, type: mimeType });
         
-        if (audioBlob.size > 0) {
+        if (audioBlob.size > 100) { // Minimum 100 bytes to have actual audio
           // Send to Whisper API
           const formData = new FormData();
-          formData.append('audio', audioBlob, 'recording.webm');
+          const extension = mimeType === 'audio/webm' ? 'webm' : 'mp4';
+          formData.append('audio', audioBlob, `recording.${extension}`);
           
           try {
             const response = await fetch('/api/whisper', {
@@ -376,20 +378,20 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
               const data = await response.json();
               console.log('Transcription:', data.text);
               
-              if (data.text) {
+              if (data.text && data.text.trim().length > 0) {
+                setMediaError(''); // Clear error on success
                 await sendToOpenAI(data.text, true);
               } else {
-                console.log('No speech detected, retrying...');
+                console.log('Empty transcription, retrying...');
                 if (conversationActive.current) {
                   setTimeout(() => startListening(), 500);
                 }
               }
             } else {
-              console.error('Whisper API error:', response.status);
-              setMediaError('Voice recognition failed. Please try again.');
-              if (conversationActive.current) {
-                setTimeout(() => startListening(), 1000);
-              }
+              const errorData = await response.json();
+              console.error('Whisper API error:', response.status, errorData);
+              setMediaError(`Voice recognition failed: ${errorData.details || 'Unknown error'}`);
+              conversationActive.current = false;
             }
           } catch (error) {
             console.error('Failed to transcribe:', error);

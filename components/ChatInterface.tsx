@@ -17,7 +17,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [mediaError, setMediaError] = useState<string>('');
   
   const inputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -26,10 +25,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const conversationActive = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioUnlockedRef = useRef(false);
-  const lastInteractionRef = useRef<number>(Date.now());
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
 
   // Detect if we're on mobile
   const isMobile = () => {
@@ -57,16 +52,10 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     }
   }, []);
 
-  // Setup speech recognition and handle iOS media permission resets
+  // Setup speech recognition
   useEffect(() => {
-    // Track user interactions to detect when iOS might have reset permissions
-    const trackInteraction = () => {
-      lastInteractionRef.current = Date.now();
-    };
-    
     // Initialize Audio Context on first user interaction for mobile
     const unlockAudio = () => {
-      trackInteraction();
       if (!audioUnlockedRef.current && typeof window !== 'undefined') {
         try {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -79,46 +68,17 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       }
     };
 
-    // Re-initialize on visibility change (iOS resets media when app backgrounds)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('App became visible - checking media permissions');
-        const timeSinceLastInteraction = Date.now() - lastInteractionRef.current;
-        
-        // If it's been more than 30 seconds, iOS likely reset permissions
-        if (timeSinceLastInteraction > 30000) {
-          console.log('Long time since last interaction, media may need re-initialization');
-          audioUnlockedRef.current = false;
-          
-          // Force recreation on next interaction
-          if (audioContextRef.current) {
-            audioContextRef.current.close().catch(() => {});
-            audioContextRef.current = null;
-          }
-        }
-      }
-    };
-
     document.addEventListener('touchstart', unlockAudio, { once: true });
     document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also track interactions globally
-    document.addEventListener('touchstart', trackInteraction);
-    document.addEventListener('click', trackInteraction);
 
     // Debug: Check API availability
-    console.log('=== Media API Check ===');
+    console.log('=== Voice API Check ===');
     console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
-    console.log('MediaRecorder available:', 'MediaRecorder' in window);
-    console.log('getUserMedia available:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
     console.log('AudioContext available:', 'AudioContext' in window || 'webkitAudioContext' in window);
     console.log('User agent:', navigator.userAgent);
     console.log('Is standalone:', window.matchMedia('(display-mode: standalone)').matches);
     
-    // Setup Web Speech API (preferred for iOS)
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      console.log('Setting up Web Speech API');
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
@@ -144,26 +104,21 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         } else if (event.error === 'audio-capture' || event.error === 'not-allowed') {
           console.error('Microphone access issue:', event.error);
           conversationActive.current = false;
+          setIsListening(false);
+          setIsSpeaking(false);
         } else {
-          console.log('Other speech error:', event.error);
-          if (conversationActive.current) {
-            setTimeout(() => startListening(), 1000);
-          }
+          console.log('Other speech error, stopping conversation');
+          conversationActive.current = false;
         }
       };
 
       recognitionRef.current.onend = () => {
-        console.log('Recognition ended');
         setIsListening(false);
       };
     }
 
     // Cleanup: Revoke blob URLs when component unmounts
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('touchstart', trackInteraction);
-      document.removeEventListener('click', trackInteraction);
-      
       if (audioRef.current?.src && audioRef.current.src.startsWith('blob:')) {
         URL.revokeObjectURL(audioRef.current.src);
       }
@@ -266,23 +221,15 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         const audioBlob = await response.blob();
         console.log('TTS audio blob size:', audioBlob.size);
         
-        // Create blob URL first
-        const blobUrl = URL.createObjectURL(audioBlob);
-        
         // Reuse existing audio element if available (iOS requirement)
         let audio = audioRef.current;
         if (!audio) {
-          console.log('Creating new Audio element');
           audio = new Audio();
           audioRef.current = audio;
           
           audio.onended = () => {
             console.log('Audio playback ended');
             setIsSpeaking(false);
-            // Revoke blob URL after playback finishes
-            if (audio && audio.src && audio.src.startsWith('blob:')) {
-              URL.revokeObjectURL(audio.src);
-            }
             if (conversationActive.current) {
               console.log('Starting listening after TTS finished');
               startListening();
@@ -292,54 +239,34 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
           audio.onerror = (e) => {
             console.error('Audio playback error:', e);
             setIsSpeaking(false);
-            // Revoke blob URL on error
-            if (audio && audio.src && audio.src.startsWith('blob:')) {
-              URL.revokeObjectURL(audio.src);
-            }
             if (conversationActive.current) {
               startListening();
             }
           };
-        } else {
-          // Revoke previous blob URL before setting new one
-          if (audio.src && audio.src.startsWith('blob:')) {
-            console.log('Revoking previous blob URL');
-            URL.revokeObjectURL(audio.src);
-          }
         }
         
-        // Set new source
+        // Revoke old blob URL if exists to prevent memory leak
+        if (audio.src && audio.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audio.src);
+        }
+        
+        // Create blob URL (automatically garbage collected)
+        const blobUrl = URL.createObjectURL(audioBlob);
         audio.src = blobUrl;
-        console.log('Set audio src to blob URL');
+        await audio.load();
         
-        // Ensure audio context is created and resumed before playing (iOS requirement)
-        if (!audioContextRef.current) {
-          console.log('Creating AudioContext');
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        
-        if (audioContextRef.current.state === 'suspended') {
-          console.log('Resuming suspended AudioContext');
+        // Ensure audio context is resumed before playing (iOS requirement)
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
           await audioContextRef.current.resume();
         }
         
-        console.log('AudioContext state:', audioContextRef.current.state);
-        
-        // Load and play
-        await audio.load();
-        console.log('Audio loaded, attempting to play...');
-        
         try {
+          console.log('Attempting to play audio...');
           await audio.play();
-          console.log('Audio started playing successfully');
-          setMediaError(''); // Clear any previous errors
+          console.log('Audio started playing');
         } catch (playError) {
-          console.error('Audio playback failed:', playError);
+          console.warn('Audio playback failed:', playError);
           setIsSpeaking(false);
-          setMediaError('Audio playback failed. Try closing and reopening the app.');
-          
-          // Revoke blob URL on play failure
-          URL.revokeObjectURL(blobUrl);
           
           // Continue conversation even if audio fails
           if (conversationActive.current) {
@@ -365,120 +292,19 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     }
   };
 
-  const startListening = async () => {
-    if (isListening || isSpeaking) {
-      console.log('Cannot start listening:', { isListening, isSpeaking });
+  const startListening = () => {
+    if (!recognitionRef.current || isListening || isSpeaking) {
+      console.log('Cannot start listening:', { hasRecognition: !!recognitionRef.current, isListening, isSpeaking });
       return;
     }
     
-    // Try Web Speech API first (works better on iOS when available)
-    if (recognitionRef.current) {
-      try {
-        console.log('Starting Web Speech recognition...');
-        setIsListening(true);
-        recognitionRef.current.start();
-        return;
-      } catch (error) {
-        console.log('Web Speech API failed, trying MediaRecorder:', error);
-      }
-    }
-    
-    // Fallback to MediaRecorder + Whisper
     try {
-      console.log('Starting voice recording with MediaRecorder');
+      console.log('Starting speech recognition...');
       setIsListening(true);
-      audioChunksRef.current = [];
-      
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      
-      // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      
-      mediaRecorder.onstop = async () => {
-        console.log('Recording stopped, processing audio...');
-        setIsListening(false);
-        
-        // Stop all tracks
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-        
-        // Create audio blob - try different formats for iOS compatibility
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        console.log('Audio blob:', { size: audioBlob.size, type: mimeType });
-        
-        if (audioBlob.size > 100) { // Minimum 100 bytes to have actual audio
-          // Send to Whisper API
-          const formData = new FormData();
-          const extension = mimeType === 'audio/webm' ? 'webm' : 'mp4';
-          formData.append('audio', audioBlob, `recording.${extension}`);
-          
-          try {
-            const response = await fetch('/api/whisper', {
-              method: 'POST',
-              body: formData,
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Transcription:', data.text);
-              
-              if (data.text && data.text.trim().length > 0) {
-                setMediaError(''); // Clear error on success
-                await sendToOpenAI(data.text, true);
-              } else {
-                console.log('Empty transcription, retrying...');
-                if (conversationActive.current) {
-                  setTimeout(() => startListening(), 500);
-                }
-              }
-            } else {
-              const errorData = await response.json();
-              console.error('Whisper API error:', response.status, errorData);
-              setMediaError(`Voice recognition failed: ${errorData.details || 'Unknown error'}`);
-              conversationActive.current = false;
-            }
-          } catch (error) {
-            console.error('Failed to transcribe:', error);
-            setMediaError('Voice recognition failed. Please try again.');
-            conversationActive.current = false;
-          }
-        } else {
-          console.log('Audio too small, retrying...');
-          if (conversationActive.current) {
-            setTimeout(() => startListening(), 500);
-          }
-        }
-      };
-      
-      // Start recording (5 second max)
-      mediaRecorder.start();
-      console.log('Recording started...');
-      
-      // Auto-stop after 5 seconds
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          console.log('Auto-stopping recording after 5 seconds');
-          mediaRecorderRef.current.stop();
-        }
-      }, 5000);
-      
+      recognitionRef.current.start();
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      console.log('Recognition error:', error);
       setIsListening(false);
-      setMediaError('Microphone access denied. Please check permissions.');
-      conversationActive.current = false;
     }
   };
 
@@ -491,54 +317,29 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       return;
     }
     
-    // Clear any previous errors
-    setMediaError('');
-    
     console.log('Starting voice conversation');
     conversationActive.current = true;
     
-    // CRITICAL: Recreate AudioContext on every interaction (iOS resets it)
-    try {
-      console.log('Recreating AudioContext for iOS compatibility');
-      if (audioContextRef.current) {
-        await audioContextRef.current.close();
-      }
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      await audioContextRef.current.resume();
-      console.log('Fresh AudioContext created, state:', audioContextRef.current.state);
-    } catch (error) {
-      console.warn('AudioContext creation failed:', error);
+    // Pre-create audio element on user interaction (iOS requirement)
+    if (!audioRef.current) {
+      console.log('Initializing audio element for iOS');
+      audioRef.current = new Audio();
+      audioRef.current.onended = () => {
+        console.log('Audio playback ended');
+        setIsSpeaking(false);
+        if (conversationActive.current) {
+          console.log('Starting listening after TTS finished');
+          startListening();
+        }
+      };
+      audioRef.current.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsSpeaking(false);
+        if (conversationActive.current) {
+          startListening();
+        }
+      };
     }
-    
-    // CRITICAL: Recreate Audio element on every interaction (iOS requirement)
-    console.log('Recreating Audio element for iOS');
-    
-    // Clean up old audio element
-    if (audioRef.current) {
-      if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
-        URL.revokeObjectURL(audioRef.current.src);
-      }
-      audioRef.current.pause();
-      audioRef.current.src = '';
-    }
-    
-    // Create fresh audio element
-    audioRef.current = new Audio();
-    audioRef.current.onended = () => {
-      console.log('Audio playback ended');
-      setIsSpeaking(false);
-      if (conversationActive.current) {
-        console.log('Starting listening after TTS finished');
-        startListening();
-      }
-    };
-    audioRef.current.onerror = (e) => {
-      console.error('Audio playback error:', e);
-      setIsSpeaking(false);
-      if (conversationActive.current) {
-        startListening();
-      }
-    };
     
     const greeting = "Hi! How are you doing?";
     
@@ -566,22 +367,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     setIsListening(false);
     setIsSpeaking(false);
     
-    // Stop MediaRecorder if active
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {
-        console.error('Error stopping MediaRecorder:', e);
-      }
-    }
-    
-    // Stop media stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    // Legacy: stop old speech recognition if exists
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -666,18 +451,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
             ))}
             {isProcessing && (
               <div className="text-sm text-gray-500 italic">Flower is typing...</div>
-            )}
-            {mediaError && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-                <div className="font-medium mb-1">⚠️ Media Error</div>
-                <div>{mediaError}</div>
-                <button 
-                  onClick={() => setMediaError('')}
-                  className="mt-2 text-xs underline"
-                >
-                  Dismiss
-                </button>
-              </div>
             )}
             {/* Extra spacing at bottom */}
             <div className="h-4"></div>

@@ -2,10 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Mic, AudioLines, Send } from 'lucide-react';
+import { MessageCircle, Mic, AudioLines, Send, Square } from 'lucide-react';
 
 const VOICE_CHOICE = 'sage';
 const VOICE_SPEED = 1.05;
+const VOICE_SERVICE_URL = process.env.NEXT_PUBLIC_VOICE_SERVICE_URL || '';
+
+// Use fast voice service if URL is configured
+const USE_FAST_VOICE = !!VOICE_SERVICE_URL;
 
 interface ChatInterfaceProps {
   inPanel?: boolean;
@@ -25,6 +29,11 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const conversationActive = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioUnlockedRef = useRef(false);
+  
+  // Fast voice service refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Detect if we're on mobile
   const isMobile = () => {
@@ -292,6 +301,224 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     }
   };
 
+  // ===== FAST VOICE SERVICE FUNCTIONS =====
+  const startFastRecording = async () => {
+    try {
+      console.log('Starting fast voice recording...');
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        } 
+      });
+      
+      streamRef.current = stream;
+      audioChunksRef.current = [];
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/webm';
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.start(100);
+      setIsListening(true);
+      conversationActive.current = true;
+      
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+    }
+  };
+
+  const stopFastRecording = async () => {
+    if (!mediaRecorderRef.current || !isListening) return;
+    
+    console.log('Stopping fast voice recording...');
+    setIsListening(false);
+    setIsProcessing(true);
+    
+    return new Promise<void>((resolve) => {
+      const mediaRecorder = mediaRecorderRef.current!;
+      
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        audioChunksRef.current = [];
+        
+        if (audioBlob.size < 1000) {
+          console.log('Recording too short');
+          setIsProcessing(false);
+          conversationActive.current = false;
+          resolve();
+          return;
+        }
+        
+        try {
+          await sendToFastVoiceService(audioBlob);
+        } catch (err) {
+          console.error('Voice service error:', err);
+          setChatMessages(prev => [...prev, { 
+            text: 'Sorry, I had trouble with that. Try again?', 
+            sender: 'ai', 
+            timestamp: Date.now() 
+          }]);
+        } finally {
+          setIsProcessing(false);
+          conversationActive.current = false;
+        }
+        resolve();
+      };
+      
+      mediaRecorder.stop();
+    });
+  };
+
+  const sendToFastVoiceService = async (audioBlob: Blob) => {
+    // Build conversation history for context
+    const history = chatMessages.slice(-10).map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    }));
+    
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('conversation_history', JSON.stringify(history));
+    
+    console.log('Sending to fast voice service:', VOICE_SERVICE_URL);
+    
+    const response = await fetch(`${VOICE_SERVICE_URL}/voice-chat`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Voice service error: ${response.status}`);
+    }
+    
+    // Process streaming response
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body');
+    
+    let transcription = '';
+    let aiResponse = '';
+    const audioChunks: Uint8Array[] = [];
+    let buffer = new Uint8Array(0);
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      // Append to buffer
+      const newBuffer = new Uint8Array(buffer.length + value.length);
+      newBuffer.set(buffer);
+      newBuffer.set(value, buffer.length);
+      buffer = newBuffer;
+      
+      // Try to find JSON lines at start of buffer
+      const text = new TextDecoder().decode(buffer);
+      const newlineIndex = text.indexOf('\n');
+      
+      if (newlineIndex > -1) {
+        const line = text.substring(0, newlineIndex);
+        try {
+          const json = JSON.parse(line);
+          if (json.type === 'transcription') {
+            transcription = json.text;
+            // Add user message immediately
+            setChatMessages(prev => [...prev, { text: transcription, sender: 'user', timestamp: Date.now() }]);
+          } else if (json.type === 'response') {
+            aiResponse = json.text;
+          }
+          // Remove parsed JSON from buffer
+          buffer = buffer.slice(new TextEncoder().encode(line + '\n').length);
+        } catch {
+          // Not valid JSON, treat rest as audio
+          audioChunks.push(buffer);
+          buffer = new Uint8Array(0);
+        }
+      } else {
+        // No newline, might be audio data
+        audioChunks.push(value);
+      }
+    }
+    
+    // Add any remaining buffer to audio
+    if (buffer.length > 0) {
+      audioChunks.push(buffer);
+    }
+    
+    // Add AI response to chat
+    if (aiResponse) {
+      setChatMessages(prev => [...prev, { text: aiResponse, sender: 'ai', timestamp: Date.now() }]);
+    }
+    
+    // Play audio
+    if (audioChunks.length > 0) {
+      await playFastAudio(audioChunks);
+    }
+  };
+
+  const playFastAudio = async (chunks: Uint8Array[]): Promise<void> => {
+    return new Promise((resolve) => {
+      setIsSpeaking(true);
+      
+      // Combine all chunks
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      const combined = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        combined.set(chunk, offset);
+        offset += chunk.length;
+      }
+      
+      const audioBlob = new Blob([combined], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      let audio = audioRef.current;
+      if (!audio) {
+        audio = new Audio();
+        audioRef.current = audio;
+      }
+      
+      // Clean up old URL
+      if (audio.src && audio.src.startsWith('blob:')) {
+        URL.revokeObjectURL(audio.src);
+      }
+      
+      audio.src = audioUrl;
+      
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsSpeaking(false);
+        resolve();
+      };
+      
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsSpeaking(false);
+        resolve();
+      };
+      
+      audio.play().catch(() => {
+        setIsSpeaking(false);
+        resolve();
+      });
+    });
+  };
+  // ===== END FAST VOICE SERVICE =====
+
   const startListening = () => {
     if (!recognitionRef.current || isListening || isSpeaking) {
       console.log('Cannot start listening:', { hasRecognition: !!recognitionRef.current, isListening, isSpeaking });
@@ -525,26 +752,77 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
 
         {/* Bottom Button Row - Centered */}
         <div className="flex items-center justify-center gap-6">
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('MIC BUTTON CLICKED');
-              startVoiceConversation();
-            }}
-            disabled={isProcessing}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-50 hover:bg-red-100 active:bg-red-200 transition-colors disabled:opacity-50 disabled:bg-gray-100 min-w-[80px]"
-            type="button"
-          >
-            {conversationActive.current || isListening ? (
-              <AudioLines size={32} className="text-blue-500 animate-pulse" />
-            ) : (
-              <Mic size={32} className="text-red-500" />
-            )}
-            <span className="text-xs text-gray-600 font-medium">
-              {conversationActive.current || isListening ? 'Listening' : 'Speak'}
-            </span>
-          </button>
+          {USE_FAST_VOICE ? (
+            /* Fast Voice Service - Hold to Record */
+            <button 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                console.log('Starting fast recording (mouse)');
+                startFastRecording();
+              }}
+              onMouseUp={(e) => {
+                e.preventDefault();
+                console.log('Stopping fast recording (mouse)');
+                stopFastRecording();
+              }}
+              onMouseLeave={() => {
+                if (isListening) {
+                  console.log('Mouse left, stopping recording');
+                  stopFastRecording();
+                }
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                console.log('Starting fast recording (touch)');
+                startFastRecording();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                console.log('Stopping fast recording (touch)');
+                stopFastRecording();
+              }}
+              disabled={isProcessing || isSpeaking}
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-colors disabled:opacity-50 disabled:bg-gray-100 min-w-[80px] ${
+                isListening 
+                  ? 'bg-red-500 scale-110' 
+                  : 'bg-red-50 hover:bg-red-100 active:bg-red-200'
+              }`}
+              type="button"
+            >
+              {isListening ? (
+                <Square size={32} className="text-white" />
+              ) : isSpeaking ? (
+                <AudioLines size={32} className="text-blue-500 animate-pulse" />
+              ) : (
+                <Mic size={32} className="text-red-500" />
+              )}
+              <span className={`text-xs font-medium ${isListening ? 'text-white' : 'text-gray-600'}`}>
+                {isListening ? 'Release' : isSpeaking ? 'Speaking' : 'Hold'}
+              </span>
+            </button>
+          ) : (
+            /* Original Voice - Tap to Start Conversation */
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('MIC BUTTON CLICKED');
+                startVoiceConversation();
+              }}
+              disabled={isProcessing}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-red-50 hover:bg-red-100 active:bg-red-200 transition-colors disabled:opacity-50 disabled:bg-gray-100 min-w-[80px]"
+              type="button"
+            >
+              {conversationActive.current || isListening ? (
+                <AudioLines size={32} className="text-blue-500 animate-pulse" />
+              ) : (
+                <Mic size={32} className="text-red-500" />
+              )}
+              <span className="text-xs text-gray-600 font-medium">
+                {conversationActive.current || isListening ? 'Listening' : 'Speak'}
+              </span>
+            </button>
+          )}
           
           <button 
             onClick={() => {

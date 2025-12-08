@@ -59,10 +59,11 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const speakGreeting = async (text: string) => {
     try {
       setIsSpeaking(true);
-      const response = await fetch('/api/tts', {
+      // Use ElevenLabs via our Render service for consistent voice
+      const response = await fetch(`${VOICE_SERVICE_URL}/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: VOICE_CHOICE, speed: VOICE_SPEED })
+        body: JSON.stringify({ text })
       });
       
       if (response.ok) {
@@ -85,6 +86,7 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         
         await audio.play().catch(() => setIsSpeaking(false));
       } else {
+        console.log('Greeting TTS not available');
         setIsSpeaking(false);
       }
     } catch (err) {
@@ -413,9 +415,12 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         audioChunksRef.current = [];
         
         if (audioBlob.size < 1000) {
-          console.log('Recording too short');
+          console.log('Recording too short, waiting for more input');
           setIsProcessing(false);
-          conversationActive.current = false;
+          // Stay in conversation - auto-restart recording
+          if (conversationActive.current) {
+            setTimeout(() => startFastRecording(), 300);
+          }
           resolve();
           return;
         }
@@ -429,9 +434,11 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
             sender: 'ai', 
             timestamp: Date.now() 
           }]);
+          // Only stop conversation on error
+          conversationActive.current = false;
         } finally {
           setIsProcessing(false);
-          conversationActive.current = false;
+          // DON'T reset conversationActive here - let it continue
         }
         resolve();
       };
@@ -567,6 +574,11 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
         setIsSpeaking(false);
+        // Auto-continue conversation - start listening after Flower speaks
+        if (conversationActive.current) {
+          console.log('Auto-continuing conversation after Flower spoke');
+          setTimeout(() => startFastRecording(), 300);
+        }
         resolve();
       };
       
@@ -818,16 +830,28 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         {/* Bottom Button Row - Centered */}
         <div className="flex items-center justify-center gap-6">
           {USE_FAST_VOICE ? (
-            /* Fast Voice Service - Tap to Start/Stop */
+            /* Fast Voice Service - Tap to Start/Stop Conversation */
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if (isListening) {
-                  console.log('Stopping fast recording (tap)');
+                  // Stop recording and end conversation mode
+                  console.log('Stopping conversation (tap while listening)');
+                  conversationActive.current = false;
                   stopFastRecording();
+                } else if (conversationActive.current) {
+                  // End conversation mode
+                  console.log('Ending conversation mode');
+                  conversationActive.current = false;
+                  if (audioRef.current) {
+                    audioRef.current.pause();
+                  }
+                  setIsSpeaking(false);
                 } else if (!isProcessing && !isSpeaking) {
-                  console.log('Starting fast recording (tap)');
+                  // Start conversation mode
+                  console.log('Starting voice conversation');
+                  conversationActive.current = true;
                   startFastRecording();
                 }
               }}
@@ -835,8 +859,8 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
               className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-colors disabled:opacity-50 disabled:bg-gray-100 min-w-[80px] ${
                 isListening 
                   ? 'bg-red-500 scale-110' 
-                  : isSpeaking
-                    ? 'bg-blue-50'
+                  : conversationActive.current || isSpeaking
+                    ? 'bg-blue-500'
                     : 'bg-red-50 hover:bg-red-100 active:bg-red-200'
               }`}
               type="button"
@@ -844,12 +868,14 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
               {isListening ? (
                 <Square size={32} className="text-white" />
               ) : isSpeaking ? (
-                <AudioLines size={32} className="text-blue-500 animate-pulse" />
+                <AudioLines size={32} className="text-white animate-pulse" />
+              ) : conversationActive.current ? (
+                <Square size={32} className="text-white" />
               ) : (
                 <Mic size={32} className="text-red-500" />
               )}
-              <span className={`text-xs font-medium ${isListening ? 'text-white' : 'text-gray-600'}`}>
-                {isListening ? 'Tap to Stop' : isSpeaking ? 'Speaking...' : 'Speak'}
+              <span className={`text-xs font-medium ${isListening || conversationActive.current || isSpeaking ? 'text-white' : 'text-gray-600'}`}>
+                {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : conversationActive.current ? 'End Chat' : 'Start Voice Chat'}
               </span>
             </button>
           ) : (

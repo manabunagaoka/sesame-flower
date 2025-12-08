@@ -306,6 +306,12 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const startFastRecording = async () => {
     try {
       console.log('Starting fast voice recording...');
+      
+      // Show greeting on first tap
+      if (chatMessages.length === 0) {
+        setChatMessages([{ text: "Hi! Tap the mic, speak, then tap again to send.", sender: 'ai', timestamp: Date.now() }]);
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -319,6 +325,8 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
         ? 'audio/webm;codecs=opus' 
         : 'audio/webm';
+      
+      console.log('Using mimeType:', mimeType);
       
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
@@ -335,6 +343,7 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       
     } catch (err) {
       console.error('Failed to start recording:', err);
+      setChatMessages(prev => [...prev, { text: `Mic error: ${err}`, sender: 'ai', timestamp: Date.now() }]);
     }
   };
 
@@ -368,10 +377,10 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
         
         try {
           await sendToFastVoiceService(audioBlob);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Voice service error:', err);
           setChatMessages(prev => [...prev, { 
-            text: 'Sorry, I had trouble with that. Try again?', 
+            text: `Error: ${err.message || err}`, 
             sender: 'ai', 
             timestamp: Date.now() 
           }]);

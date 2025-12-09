@@ -570,7 +570,6 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     // Find where JSON ends and audio begins
     // JSON lines end with newline, then audio (binary) starts
     const decoder = new TextDecoder();
-    let jsonEndIndex = 0;
     let transcription = '';
     let aiResponse = '';
     

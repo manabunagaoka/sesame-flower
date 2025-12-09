@@ -58,9 +58,161 @@ Created a new **Python FastAPI microservice** on Render for fast voice processin
 
 ---
 
-# Previous Session Notes - November 16-17, 2025
+# Development Session Notes
 
-## Latest Update - November 17, 2025
+## Session - December 8, 2025
+
+### Voice Chat Improvements (Technical)
+
+**Completed:**
+- ✅ Initial greeting now speaks with Flower's ElevenLabs voice (via `/tts` endpoint on Render)
+- ✅ Added Voice Activity Detection (VAD) - auto-stops recording after 1.5s silence
+- ✅ Fixed stream parsing - Flower's text response now appears in chat while audio plays
+- ✅ Deployed to Vercel (commits: 22d3684, e7527f9)
+
+**Still Needs Work:**
+- 🔲 Conversation still requires tap to stop (VAD may need tuning)
+- 🔲 Response takes a few seconds to show text and speak (waits for full response)
+- 🔲 Will address in new UI redesign
+
+---
+
+### Major Product Vision Discussion: "Sesame HOME"
+
+**Core Concept:** Flower is the HOME system for families with young kids - like Alexa/Echo Show but designed for Sesame Street families.
+
+**The Flower Metaphor:**
+- The menu wheel IS a flower
+- Center = Flower AI (always available, like Alexa)
+- Petals = 8 main features
+- Tapping a petal → Full screen content (no more side panels)
+- Back gesture returns to flower
+
+**Target Users:**
+- Primary: Parents (they set up, configure, control)
+- End users: Kids (they interact with content)
+- Parent-first, kid-friendly design
+
+---
+
+### Final 8-Petal Layout (Clockwise from Top)
+
+```
+              [Communication]
+                    12
+                    
+     [Market]                [Learning]
+         11                      1
+         
+   [Garden]        🌸          [Videos]
+       9                          3
+         
+     [Activities]            [Games]
+          7                      5
+                    
+              [Nudges]
+                    6
+```
+
+| Position | Feature | Description |
+|----------|---------|-------------|
+| 12 (top) | **Communication** | Emergency contacts, family, schools, babysitters - ANCHOR point, always at top |
+| 1-2 | **Learning** | Sesame Street English, SEL, educational subscriptions |
+| 3 | **Videos** | Sesame content, stories, music videos (Stories + Music consolidated here) |
+| 5 | **Games** | Educational games |
+| 6 (bottom) | **Nudges** | Daily reminders, routine prompts, school newsletters, AI-powered suggestions - THUMB ZONE for parents |
+| 7 | **Activities** | Playdates, events, calendar |
+| 9 | **Garden** | Rewards/incentive system (see below) |
+| 11 | **Market** | Shopping, coming soon |
+
+**Design Rationale:**
+- Communication at 12 = Safety anchor, always findable
+- Nudges at 6 = Thumb zone, parents check first
+- Right side (1,3,5) = Kid engagement zone (Learning, Videos, Games)
+- Left side (7,9,11) = Support/Parent zone (Activities, Garden, Market)
+
+---
+
+### Garden Feature (Rewards System)
+
+**Concept:** Kids grow virtual flowers through positive app engagement
+
+**Growth Stages:**
+1. 🌰 Seed → Account created
+2. 🌱 Sprout → First week active
+3. 🌿 Seedling → Completed first routine
+4. 🌷 Bud → 10 learning sessions
+5. 🌸 Bloom → 1 month active
+6. 🌺 Full Flower → Mastered a skill
+7. 💐 Garden → Multiple flowers collected
+
+**Flower Varieties to Collect:**
+- 🌻 Sunflower = Learning streaks (Knowledge)
+- 🌹 Rose = Communication use (Love/Connection)
+- 🌼 Daisy = Completed routines (Responsibility)
+- 🌺 Hibiscus = Creative activities (Creativity)
+- 🌸 Cherry Blossom = Kindness actions (Character)
+- 🪻 Lavender = Calm/mindfulness (Emotional health)
+
+**Earning Growth:**
+- Complete routines → Sunshine points
+- Watch learning videos → Knowledge drops
+- Call family → Love petals
+- Play educational games → Brain boost
+- Kindness (parent confirms) → Golden stars
+- Daily streaks → Streak bonus
+
+**Engagement Hooks:**
+- Flowers droop slightly if inactive (gentle, not punishing)
+- Flower AI: "I miss you! Want to play?"
+- Garden view shows all collected flowers
+- Family can "visit" each other's gardens
+- Seasonal changes in garden
+
+**Why It Works:**
+- Intrinsic motivation (nurturing something alive)
+- Visual progress over time
+- Ties to "Flower" brand
+- Long-term retention (collect them all)
+- Family connection features
+
+---
+
+### To-Do / Discuss List for Next Session
+
+**Technical (Voice Chat):**
+- [ ] Tune VAD sensitivity for better auto-stop
+- [ ] Consider streaming text display (show words as they come)
+- [ ] Address in context of new UI redesign
+
+**Design Decisions Needed:**
+- [ ] **No emoji icons** → Use Sesame character buttons instead (better branding)
+- [ ] **MVP Scope** → How complex to build? What's Phase 1 vs Phase 2?
+- [ ] **Language Selection** → When/where does user pick language?
+  - First markets: Mexico 🇲🇽, then China 🇨🇳
+  - First-run setup? Settings? Per-profile?
+  - Does Flower AI speak in selected language?
+  - Content availability per language?
+
+**MVP Questions:**
+- [ ] Which petals are essential for MVP?
+- [ ] Can Garden be simplified for V1? (Just streaks/points, fancy garden later?)
+- [ ] What's the minimum viable "Nudges" feature?
+- [ ] Communication = just saved contacts, or video calling too?
+
+**Future Considerations:**
+- [ ] Parent mode toggle (long-press center?)
+- [ ] Per-child profiles
+- [ ] Partner/licensee integrations (how do they add to petals?)
+- [ ] Offline mode for areas with poor connectivity
+
+---
+
+## Earlier Sessions
+
+---
+
+## Session - November 16-17, 2025
 
 ### ✅ RESOLVED: Browser Compatibility Issue
 

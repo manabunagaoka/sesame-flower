@@ -1,4 +1,64 @@
-# Development Session Notes - November 16-17, 2025
+# Development Session Notes
+
+## Session - December 7, 2025
+
+### Goal: Fast Voice Chat (Sub-1-Second Response Time)
+
+**Problem**: Current voice chat takes 5-10 seconds per response. Need sub-1-second for Mexico client testing.
+
+### Architecture Built
+
+Created a new **Python FastAPI microservice** on Render for fast voice processing:
+
+**Pipeline:**
+1. **Groq Whisper** (STT) - Ultra-fast transcription
+2. **OpenAI GPT-4o-mini** (LLM) - Fast responses
+3. **ElevenLabs** (TTS) - Flower's custom voice (ID: `rrzs0BJdhYIhIwJxuqwj`)
+
+**Repository**: `voice-chat-service` on GitHub
+**Deployed to**: Render at `https://voice-chat-service-i5u9.onrender.com`
+
+### What Was Accomplished
+
+1. ✅ **Created voice-chat-service repo** with FastAPI backend
+2. ✅ **Deployed to Render** with environment variables (GROQ_API_KEY, OPENAI_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID)
+3. ✅ **Fixed CORS issues** - Changed to `allow_origins=["*"]`
+4. ✅ **Fixed Groq error** - Removed unsupported `"language": "auto"` parameter
+5. ✅ **Added `/tts` endpoint** - For initial greeting with ElevenLabs voice
+6. ✅ **Initial greeting now speaks** with Flower's ElevenLabs voice
+7. ✅ **Transcription works** - User speech converts to text
+8. ✅ **AI responds with voice** - ElevenLabs audio plays back
+
+### What Still Needs Work (Tomorrow's To-Do)
+
+1. 🔲 **Flower types what she says** 
+   - AI response text not appearing in chat, only audio plays
+   - Need to fix stream parsing in `sendToFastVoiceService` to capture `{"type": "response", "text": "..."}`
+
+2. 🔲 **Continuous conversation flow**
+   - Currently must tap "Stop" after each utterance
+   - Need Voice Activity Detection (VAD) or silence detection
+   - Flow should be: Tap once → speak → auto-detect silence → send → Flower replies → auto-listen again
+
+3. 🔲 **Clean exit from voice mode**
+   - Need clear way to end conversation loop (double-tap or dedicated button)
+
+### Files Modified
+
+**flower repo (Next.js frontend):**
+- `components/ChatInterface.tsx` - Added fast voice service integration, ElevenLabs greeting, conversation mode
+
+**voice-chat-service repo (Python backend):**
+- `main.py` - FastAPI service with `/health`, `/tts`, `/voice-chat` endpoints
+- `requirements.txt` - Dependencies (fastapi, uvicorn, httpx, python-multipart, pydantic)
+
+### Security Update (Earlier Today)
+
+- Upgraded Next.js from 15.5.3 to 15.5.7 for CVE-2025-55182
+
+---
+
+# Previous Session Notes - November 16-17, 2025
 
 ## Latest Update - November 17, 2025
 

@@ -35,6 +35,11 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  
+  // Voice Activity Detection refs
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSpokenRef = useRef(false);
 
   // Detect if we're on mobile
   const isMobile = () => {
@@ -357,7 +362,7 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
   // ===== FAST VOICE SERVICE FUNCTIONS =====
   const startFastRecording = async () => {
     try {
-      console.log('Starting fast voice recording...');
+      console.log('Starting fast voice recording with VAD...');
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -368,6 +373,62 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       
       streamRef.current = stream;
       audioChunksRef.current = [];
+      hasSpokenRef.current = false;
+      
+      // Set up Voice Activity Detection
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.5;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const SILENCE_THRESHOLD = 15; // Adjust based on testing (lower = more sensitive)
+      const SILENCE_DURATION = 1500; // 1.5 seconds of silence to stop
+      const MIN_SPEECH_DURATION = 500; // Must speak for at least 0.5s
+      
+      let speechStartTime: number | null = null;
+      
+      // Monitor audio levels
+      const checkAudioLevel = () => {
+        if (!analyserRef.current || !isListening) return;
+        
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        
+        if (average > SILENCE_THRESHOLD) {
+          // User is speaking
+          if (!speechStartTime) {
+            speechStartTime = Date.now();
+            console.log('Speech detected');
+          }
+          
+          // Mark that user has spoken (after minimum duration)
+          if (speechStartTime && Date.now() - speechStartTime > MIN_SPEECH_DURATION) {
+            hasSpokenRef.current = true;
+          }
+          
+          // Clear silence timer
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+        } else if (hasSpokenRef.current && !silenceTimerRef.current) {
+          // User stopped speaking - start silence timer
+          console.log('Silence detected, starting timer...');
+          silenceTimerRef.current = setTimeout(() => {
+            console.log('Silence threshold reached, auto-stopping');
+            stopFastRecording();
+          }, SILENCE_DURATION);
+        }
+        
+        // Continue monitoring
+        if (isListening) {
+          requestAnimationFrame(checkAudioLevel);
+        }
+      };
       
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
         ? 'audio/webm;codecs=opus' 
@@ -388,6 +449,9 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       setIsListening(true);
       conversationActive.current = true;
       
+      // Start VAD monitoring
+      requestAnimationFrame(checkAudioLevel);
+      
     } catch (err) {
       console.error('Failed to start recording:', err);
       setChatMessages(prev => [...prev, { text: `Mic error: ${err}`, sender: 'ai', timestamp: Date.now() }]);
@@ -400,6 +464,14 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
     console.log('Stopping fast voice recording...');
     setIsListening(false);
     setIsProcessing(true);
+    
+    // Clean up VAD resources
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    analyserRef.current = null;
+    hasSpokenRef.current = false;
     
     return new Promise<void>((resolve) => {
       const mediaRecorder = mediaRecorderRef.current!;
@@ -474,71 +546,85 @@ export default function ChatInterface({ inPanel = false }: ChatInterfaceProps) {
       throw new Error(`Voice service error: ${response.status} - ${errorText}`);
     }
     
-    // Process streaming response
+    // Process streaming response - collect all data first
     const reader = response.body?.getReader();
     if (!reader) throw new Error('No response body');
     
-    let transcription = '';
-    let aiResponse = '';
-    const audioChunks: Uint8Array[] = [];
-    let textBuffer = '';
-    
+    // Collect all chunks
+    const allChunks: Uint8Array[] = [];
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      if (value) allChunks.push(value);
+    }
+    
+    // Combine all data
+    const totalLength = allChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of allChunks) {
+      combined.set(chunk, offset);
+      offset += chunk.length;
+    }
+    
+    // Find where JSON ends and audio begins
+    // JSON lines end with newline, then audio (binary) starts
+    const decoder = new TextDecoder();
+    let jsonEndIndex = 0;
+    let transcription = '';
+    let aiResponse = '';
+    
+    // Look for JSON lines at the start of the response
+    // Each JSON line ends with \n, audio data follows after last JSON line
+    const fullText = decoder.decode(combined);
+    const lines = fullText.split('\n');
+    
+    let bytesProcessed = 0;
+    for (const line of lines) {
+      const lineBytes = new TextEncoder().encode(line + '\n').length;
       
-      // Try to decode as text to find JSON metadata
-      try {
-        const text = new TextDecoder().decode(value);
-        
-        // Check if this chunk contains JSON (starts with { or has newline with {)
-        if (text.includes('{"type"')) {
-          // This chunk has JSON, parse it
-          const lines = (textBuffer + text).split('\n');
-          textBuffer = '';
-          
-          for (const line of lines) {
-            if (line.trim().startsWith('{')) {
-              try {
-                const json = JSON.parse(line.trim());
-                if (json.type === 'transcription') {
-                  transcription = json.text;
-                  console.log('Got transcription:', transcription);
-                  setChatMessages(prev => [...prev, { text: transcription, sender: 'user', timestamp: Date.now() }]);
-                } else if (json.type === 'response') {
-                  aiResponse = json.text;
-                  console.log('Got AI response:', aiResponse);
-                } else if (json.type === 'error') {
-                  console.error('Service error:', json.message);
-                  setChatMessages(prev => [...prev, { text: json.message, sender: 'ai', timestamp: Date.now() }]);
-                }
-              } catch {
-                // Not valid JSON, might be partial
-                textBuffer += line + '\n';
-              }
-            } else if (line.trim()) {
-              // Non-JSON text, keep in buffer
-              textBuffer += line + '\n';
-            }
+      if (line.trim().startsWith('{')) {
+        try {
+          const json = JSON.parse(line.trim());
+          if (json.type === 'transcription' && json.text) {
+            transcription = json.text;
+            console.log('Got transcription:', transcription);
+            setChatMessages(prev => [...prev, { text: transcription, sender: 'user', timestamp: Date.now() }]);
+            bytesProcessed += lineBytes;
+          } else if (json.type === 'response' && json.text) {
+            aiResponse = json.text;
+            console.log('Got AI response:', aiResponse);
+            // Add response to chat immediately so user sees it while audio plays
+            setChatMessages(prev => [...prev, { text: aiResponse, sender: 'ai', timestamp: Date.now() }]);
+            bytesProcessed += lineBytes;
+          } else if (json.type === 'error') {
+            console.error('Service error:', json.message);
+            setChatMessages(prev => [...prev, { text: json.message, sender: 'ai', timestamp: Date.now() }]);
+            bytesProcessed += lineBytes;
+          } else {
+            // Unknown JSON or binary data that looks like JSON - stop parsing
+            break;
           }
-        } else {
-          // Likely audio data
-          audioChunks.push(value);
+        } catch {
+          // Not valid JSON - this is likely audio data
+          break;
         }
-      } catch {
-        // Binary data, treat as audio
-        audioChunks.push(value);
+      } else if (line.trim() === '') {
+        // Empty line between JSON and audio
+        bytesProcessed += lineBytes;
+      } else {
+        // Non-JSON content - audio data starts here
+        break;
       }
     }
     
-    // Add AI response to chat BEFORE playing audio
-    if (aiResponse) {
-      setChatMessages(prev => [...prev, { text: aiResponse, sender: 'ai', timestamp: Date.now() }]);
-    }
+    // Extract audio bytes (everything after the JSON lines)
+    const audioData = combined.slice(bytesProcessed);
+    console.log(`Parsed: transcription=${transcription?.length || 0} chars, response=${aiResponse?.length || 0} chars, audio=${audioData.length} bytes`);
     
     // Play audio
-    if (audioChunks.length > 0) {
-      await playFastAudio(audioChunks);
+    if (audioData.length > 100) {
+      await playFastAudio([audioData]);
     }
   };
 

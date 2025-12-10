@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, Mic, AudioLines, Send, Square, RotateCcw } from 'lucide-react';
 
 const VOICE_CHOICE = 'sage';
@@ -13,7 +13,7 @@ const VOICE_SERVICE_URL = 'https://voice-chat-service-i5u9.onrender.com';
 const USE_FAST_VOICE = true;
 
 // Typing animation component
-function TypewriterText({ text, speed = 30, onComplete }: { text: string; speed?: number; onComplete?: () => void }) {
+function TypewriterText({ text, speed = 30, onComplete, onUpdate }: { text: string; speed?: number; onComplete?: () => void; onUpdate?: () => void }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   
@@ -28,6 +28,8 @@ function TypewriterText({ text, speed = 30, onComplete }: { text: string; speed?
       if (index < text.length) {
         setDisplayedText(text.slice(0, index + 1));
         index++;
+        // Notify parent on each character for scroll updates
+        onUpdate?.();
       } else {
         clearInterval(timer);
         setIsComplete(true);
@@ -36,7 +38,7 @@ function TypewriterText({ text, speed = 30, onComplete }: { text: string; speed?
     }, speed);
     
     return () => clearInterval(timer);
-  }, [text, speed, onComplete]);
+  }, [text, speed, onComplete, onUpdate]);
   
   return <span>{displayedText}</span>;
 }
@@ -219,29 +221,23 @@ export default function ChatInterface({
     }
   };
 
+  // Scroll to bottom helper - used by both useEffect and typewriter callback
+  const scrollToBottom = useCallback(() => {
+    if (chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
+  }, []);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     // Small delay to ensure DOM has updated with new content
-    const scrollTimer = setTimeout(() => {
-      if (chatContainerRef.current) {
-        const container = chatContainerRef.current;
-        // Force scroll to absolute bottom
-        container.scrollTop = container.scrollHeight;
-      }
-    }, 100);
-    
-    // Also scroll after a longer delay for when content settles (typewriter animation)
-    const scrollTimer2 = setTimeout(() => {
-      if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      }
-    }, 500);
+    const scrollTimer = setTimeout(scrollToBottom, 50);
     
     return () => {
       clearTimeout(scrollTimer);
-      clearTimeout(scrollTimer2);
     };
-  }, [chatMessages, isProcessing, isSpeaking, isListening, isTranscribing]);
+  }, [chatMessages, isProcessing, isSpeaking, isListening, isTranscribing, scrollToBottom]);
 
   // Auto-focus input on mount
   useEffect(() => {
@@ -1111,6 +1107,7 @@ export default function ChatInterface({
                           text={message.text} 
                           speed={35}
                           onComplete={() => setAnimatingMessageId(null)}
+                          onUpdate={scrollToBottom}
                         />
                       ) : (
                         message.text
@@ -1200,7 +1197,6 @@ export default function ChatInterface({
             disabled={isProcessing}
             className="flex-1 bg-gray-50 text-base outline-none placeholder-gray-500 disabled:opacity-50 px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-1 focus:ring-green-500"
             autoComplete="off"
-            autoFocus
             spellCheck="false"
           />
           {(textInput.trim() || (inputRef.current?.value?.trim())) && !isProcessing && (

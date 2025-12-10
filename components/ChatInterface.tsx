@@ -135,8 +135,7 @@ export default function ChatInterface({
     console.log('=== Greeting useEffect ===', {
       hasGreetedRef: hasGreetedRef.current,
       chatMessagesLength: chatMessages.length,
-      USE_FAST_VOICE,
-      isMobile: isMobile()
+      USE_FAST_VOICE
     });
     
     // Skip if already greeted or there are existing messages (returning to conversation)
@@ -151,32 +150,26 @@ export default function ChatInterface({
     hasGreetedRef.current = true;
     console.log('Starting fresh greeting...');
     
+    // Request mic permission early (works on both desktop and mobile)
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+        console.log('Mic permission granted');
+      })
+      .catch(err => {
+        console.warn('Mic permission not granted:', err);
+      });
+    
     const greeting = "Hi! How are you doing? What's on your mind?";
     const timestamp = Date.now();
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
     setAnimatingMessageId(timestamp); // Start typing animation
     
-    // On DESKTOP: Request mic permission and auto-start conversation
-    // On MOBILE: Don't auto-start (mic permission popup blocks everything)
-    if (!isMobile()) {
-      // Desktop: request mic permission early 
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          stream.getTracks().forEach(track => track.stop());
-          console.log('Mic permission granted (desktop)');
-        })
-        .catch(err => {
-          console.warn('Mic permission not granted:', err);
-        });
-      
-      // Auto-start conversation mode on desktop
-      conversationActive.current = true;
-      // Speak the greeting, then start listening
-      speakGreetingAndListen(greeting);
-    } else {
-      // Mobile: just show the greeting, user will tap mic when ready
-      speakGreetingOnly(greeting);
-    }
+    // Auto-start conversation mode
+    conversationActive.current = true;
+    
+    // Speak the greeting, then start listening
+    speakGreetingAndListen(greeting);
   }, []);
 
   // Desktop: Speak greeting AND auto-start listening after

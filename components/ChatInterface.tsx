@@ -128,67 +128,38 @@ export default function ChatInterface({
     );
   };
 
-  // Initial greeting when chat opens - auto-start conversation
-  // Only greet if there are no existing messages (first time opening)
+  // Track if we've greeted the user in this session
   const hasGreetedRef = useRef(false);
+  
+  // On mount, check if returning to existing conversation
   useEffect(() => {
-    console.log('=== Greeting useEffect ===', {
-      hasGreetedRef: hasGreetedRef.current,
-      chatMessagesLength: chatMessages.length,
-      USE_FAST_VOICE
+    console.log('=== ChatInterface mounted ===', {
+      chatMessagesLength: chatMessages.length
     });
     
-    if (!USE_FAST_VOICE) return;
-    
-    // RETURNING to existing conversation (has messages)
+    // If returning to existing conversation, mark as greeted
     if (chatMessages.length > 0) {
-      console.log('Returning to existing conversation - mic ready when user taps');
+      console.log('Returning to existing conversation');
       hasGreetedRef.current = true;
-      // Don't auto-request mic - user will tap mic button when ready
-      // The mic button tap is a user gesture, so it will work on mobile
-      return;
     }
-    
-    // FIRST TIME - show greeting
-    if (hasGreetedRef.current) {
-      console.log('Already greeted, skipping');
-      return;
-    }
-    
-    hasGreetedRef.current = true;
-    console.log('Starting fresh greeting...');
-    
-    // Request mic permission AND keep the stream for later use
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        console.log('Mic permission granted - keeping stream for later');
-        streamRef.current = stream;
-      })
-      .catch(err => {
-        console.warn('Mic permission not granted:', err);
-      });
-    
-    const greeting = "Hi! How are you doing? What's on your mind?";
-    const timestamp = Date.now();
-    setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
-    setAnimatingMessageId(timestamp); // Start typing animation
-    
-    // Auto-start conversation mode
-    conversationActive.current = true;
-    
-    // Speak the greeting, then start listening
-    speakGreetingAndListen(greeting);
   }, []);
 
-  // Desktop: Speak greeting AND auto-start listening after
-  const speakGreetingAndListen = async (text: string) => {
-    console.log('=== speakGreetingAndListen called (desktop) ===');
+  // Speak greeting and then start listening (called on first mic tap)
+  const speakGreetingThenListen = async () => {
+    console.log('=== speakGreetingThenListen called ===');
+    const greeting = "Hi! How are you doing? What's on your mind?";
+    
+    // Add greeting message with typing animation
+    const timestamp = Date.now();
+    setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
+    setAnimatingMessageId(timestamp);
+    
     try {
       setIsSpeaking(true);
       const response = await fetch(`${VOICE_SERVICE_URL}/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text: greeting })
       });
       
       if (response.ok) {
@@ -201,12 +172,11 @@ export default function ChatInterface({
         audio.src = blobUrl;
         
         audio.onended = () => {
-          console.log('Greeting audio ended');
+          console.log('Greeting audio ended - now listening');
           URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
-          // Auto-start listening after greeting finishes
+          // Auto-start listening after greeting
           if (conversationActive.current) {
-            console.log('Starting listening after greeting...');
             startFastRecording();
           }
         };
@@ -215,6 +185,7 @@ export default function ChatInterface({
           console.error('Greeting audio error:', e);
           URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
+          // Still try to listen even if audio failed
           if (conversationActive.current) {
             startFastRecording();
           }
@@ -226,6 +197,7 @@ export default function ChatInterface({
         } catch (playErr) {
           console.warn('Greeting play failed:', playErr);
           setIsSpeaking(false);
+          // Still start listening
           if (conversationActive.current) {
             startFastRecording();
           }
@@ -233,6 +205,7 @@ export default function ChatInterface({
       } else {
         console.log('Greeting TTS not available (status:', response.status, ')');
         setIsSpeaking(false);
+        // Still start listening
         if (conversationActive.current) {
           startFastRecording();
         }
@@ -240,71 +213,10 @@ export default function ChatInterface({
     } catch (err) {
       console.error('Greeting TTS error:', err);
       setIsSpeaking(false);
+      // Still start listening
       if (conversationActive.current) {
         startFastRecording();
       }
-    }
-  };
-
-  // Speak greeting without starting listening (avoids mic permission popup on mobile)
-  const speakGreetingOnly = async (text: string) => {
-    console.log('=== speakGreetingOnly called (mobile) ===');
-    try {
-      // DON'T set isSpeaking yet - only set it when audio actually plays
-      // This prevents blocking the mic button while TTS loads
-      
-      // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const response = await fetch(`${VOICE_SERVICE_URL}/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeout);
-      
-      if (response.ok) {
-        const audioBlob = await response.blob();
-        console.log('Got greeting audio, size:', audioBlob.size);
-        const audio = new Audio();
-        audioRef.current = audio;
-        
-        const blobUrl = URL.createObjectURL(audioBlob);
-        audio.src = blobUrl;
-        
-        audio.onended = () => {
-          console.log('Greeting audio ended (mobile)');
-          URL.revokeObjectURL(blobUrl);
-          setIsSpeaking(false);
-        };
-        
-        audio.onerror = (e) => {
-          console.error('Greeting audio error (mobile):', e);
-          URL.revokeObjectURL(blobUrl);
-          setIsSpeaking(false);
-        };
-        
-        try {
-          console.log('Attempting to play greeting audio (mobile)...');
-          await audio.play();
-          // Only set isSpeaking=true AFTER play succeeds
-          setIsSpeaking(true);
-          console.log('Greeting audio playing on mobile');
-        } catch (playErr) {
-          console.warn('Greeting play failed (mobile autoplay blocked):', playErr);
-          URL.revokeObjectURL(blobUrl);
-          // Don't set isSpeaking - audio never played, mic button is ready
-        }
-      } else {
-        console.log('Greeting TTS not available (status:', response.status, ')');
-        // Don't set isSpeaking - nothing is playing
-      }
-    } catch (err) {
-      console.error('Greeting TTS fetch error (mobile):', err);
-      // Don't set isSpeaking - nothing is playing
     }
   };
 
@@ -1151,20 +1063,11 @@ export default function ChatInterface({
     // Clear messages
     setChatMessages([]);
     
-    // Reset greeting flag so it will greet again
+    // Reset greeting flag so next mic tap will greet
     hasGreetedRef.current = false;
     
-    // Start fresh greeting after a short delay
-    setTimeout(() => {
-      if (USE_FAST_VOICE) {
-        const greeting = "Hi! How are you doing? What's on your mind?";
-        const timestamp = Date.now();
-        setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
-        setAnimatingMessageId(timestamp);
-        // Don't auto-start conversation - let user tap mic
-        speakGreetingOnly(greeting);
-      }
-    }, 300);
+    // Panel is now silent - user taps mic to start fresh conversation
+    console.log('Conversation reset - ready for new conversation');
   };
 
   return (
@@ -1380,10 +1283,28 @@ export default function ChatInterface({
                   }
                   setIsSpeaking(false);
                 } else if (!isProcessing && !isTranscribing) {
-                  // Start listening
-                  console.log('Mic button pressed - CALLING startFastRecording');
+                  // Start conversation
+                  console.log('Mic button pressed');
                   conversationActive.current = true;
-                  startFastRecording();
+                  
+                  // First time? Greet then listen. Otherwise just listen.
+                  if (!hasGreetedRef.current) {
+                    console.log('First time - greeting then listening');
+                    hasGreetedRef.current = true;
+                    // Request mic permission first, then greet + listen
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                      .then(stream => {
+                        streamRef.current = stream;
+                        speakGreetingThenListen();
+                      })
+                      .catch(err => {
+                        console.error('Mic permission denied:', err);
+                        conversationActive.current = false;
+                      });
+                  } else {
+                    console.log('Continuing conversation - just listening');
+                    startFastRecording();
+                  }
                 } else {
                   console.log('Mic button blocked by isProcessing or isTranscribing');
                 }

@@ -150,11 +150,13 @@ export default function ChatInterface({
     hasGreetedRef.current = true;
     console.log('Starting fresh greeting...');
     
-    // Request mic permission early (works on both desktop and mobile)
+    // Request mic permission AND keep the stream for later use
+    // This preserves the user gesture context on mobile
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
-        stream.getTracks().forEach(track => track.stop());
-        console.log('Mic permission granted');
+        console.log('Mic permission granted - keeping stream for later');
+        // Store the stream for startFastRecording to use
+        streamRef.current = stream;
       })
       .catch(err => {
         console.warn('Mic permission not granted:', err);
@@ -616,15 +618,23 @@ export default function ChatInterface({
     try {
       console.log('Starting fast voice recording with VAD...');
       
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true, // Help normalize audio levels
-        } 
-      });
+      // Reuse existing stream if available (preserves user gesture context on mobile)
+      // Otherwise request a new one
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        console.log('No existing stream, requesting new one...');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          } 
+        });
+        streamRef.current = stream;
+      } else {
+        console.log('Reusing existing stream');
+      }
       
-      streamRef.current = stream;
       audioChunksRef.current = [];
       hasSpokenRef.current = false;
       isListeningRef.current = true; // Set ref for VAD closure

@@ -12,7 +12,7 @@ import {
 import { clsx } from 'clsx';
 import { ContentItem } from '@/lib/types';
 import { ANIMATION_DURATION } from '@/lib/constants';
-import ChatInterface from './ChatInterface';
+import ChatInterface, { ChatMessage } from './ChatInterface';
 
 // Icon mapping for content items
 const contentIconMap = {
@@ -28,21 +28,32 @@ interface SidePanelProps {
   title: string;
   content: ContentItem[];
   onContentSelect: (item: ContentItem) => void;
+  // Chat state lifted from page for persistence
+  chatMessages?: ChatMessage[];
+  setChatMessages?: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
-export default function SidePanel({ isOpen, onClose, title, content, onContentSelect }: SidePanelProps) {
+export default function SidePanel({ 
+  isOpen, 
+  onClose, 
+  title, 
+  content, 
+  onContentSelect,
+  chatMessages,
+  setChatMessages 
+}: SidePanelProps) {
   const [showChat, setShowChat] = useState(false);
   const isConnect = title.toLowerCase() === 'connect';
   const isChat = title.toLowerCase() === 'chat';
 
-  // Reset chat when panel closes, or auto-open chat for chat menu
+  // Auto-open chat for chat menu (but don't reset when panel closes to preserve state)
   React.useEffect(() => {
-    if (!isOpen) {
-      setShowChat(false);
-    } else if (isChat) {
+    if (isOpen && isChat && !showChat) {
       setShowChat(true);
     }
-  }, [isOpen, isChat]);
+    // Note: We intentionally DON'T reset showChat when panel closes
+    // This preserves chat history when user closes and reopens the panel
+  }, [isOpen, isChat, showChat]);
   return (
     <AnimatePresence>
       {isOpen && (
@@ -228,7 +239,11 @@ export default function SidePanel({ isOpen, onClose, title, content, onContentSe
                       minHeight: '400px'
                     }}
                   >
-                    <ChatInterface inPanel={true} />
+                    <ChatInterface 
+                      inPanel={true} 
+                      chatMessages={chatMessages}
+                      setChatMessages={setChatMessages}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

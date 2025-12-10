@@ -6,6 +6,7 @@ import { MoreVertical } from 'lucide-react';
 import MenuWheel from '@/components/MenuWheel';
 import TrackWheel from '@/components/TrackWheel';
 import SidePanel from '@/components/SidePanel';
+import { ChatMessage } from '@/components/ChatInterface';
 import { MENU_CONTENT, ANIMATION_DURATION, MAIN_MENU_ITEMS, MORE_MENU_ITEMS } from '@/lib/constants';
 import { MenuState, ContentItem } from '@/lib/types';
 
@@ -20,6 +21,9 @@ export default function HomePage() {
   const [wheelAngle, setWheelAngle] = useState<number>(0);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [videoKey, setVideoKey] = useState<number>(0); // Force iframe reload when needed
+  
+  // Chat state lifted here for persistence across panel open/close
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
@@ -303,6 +307,8 @@ export default function HomePage() {
         onContentSelect={(item) => {
           setSelectedContent(item);
         }}
+        chatMessages={chatMessages}
+        setChatMessages={setChatMessages}
       />
     </div>
   );

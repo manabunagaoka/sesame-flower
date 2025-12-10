@@ -370,3 +370,186 @@ await audio.play();
 - Container: Ubuntu 24.04.3 LTS
 - Local URL: http://localhost:3000
 - Production URL: [Vercel deployment - check Vercel dashboard]
+
+---
+
+## Session - December 10, 2025
+
+### Goal: Fix Voice Chat Issues & Polish MVP
+
+### Issues Fixed This Session
+
+#### 1. ✅ Duplicate Key React Error
+**Problem:** Console error "Encountered two children with the same key" - messages using `timestamp` as key caused collisions.
+
+**Solution:** 
+- Added unique `id` field to `ChatMessage` type
+- Created `generateMessageId()` helper function using timestamp + counter
+- Updated all `setChatMessages` calls to include unique ID
+- Updated React map key to use `message.id`
+
+#### 2. ✅ Flower Losing Conversation Memory
+**Problem:** Flower would forget what she said (e.g., after speaking Spanish, said "I didn't say anything yet!")
+
+**Root Causes:**
+- Stale closure issue - `chatMessages` was captured at function definition time
+- Voice service only used 10 messages of history
+
+**Solutions:**
+- Added `chatMessagesRef` to always have latest messages in async callbacks
+- Increased history from 10 to 20 messages in both frontend and voice service
+- Updated voice service system prompt to explicitly remember context
+
+#### 3. ✅ VAD False Positives (Random Noise Triggering)
+**Problem:** Flower was responding to ambient noise, generating nonsense like "Hubsan x4 H501S", "Hi, This is Dorian Please Like and Subscribe"
+
+**Solutions:**
+- Increased `SILENCE_THRESHOLD` from 15 to 25
+- Increased `SILENCE_DURATION` from 1.5s to 2s  
+- Increased `MIN_SPEECH_DURATION` from 0.5s to 0.8s
+- Added `MIN_AUDIO_LEVEL_TO_SEND = 20` (peak level check)
+- Increased `smoothingTimeConstant` from 0.5 to 0.85
+- Increased minimum blob size from 1000 to 3000 bytes
+- Added `autoGainControl: true` to mic settings
+
+#### 4. ✅ Stop Button Not Stopping
+**Problem:** Pressing stop during listening didn't end the conversation loop.
+
+**Solution:**
+- Stop button now sets `conversationActive.current = false`
+- Updated `stopConversation()` to properly stop MediaRecorder, audio stream, and all timers
+- Added cleanup for all refs
+
+#### 5. ✅ Chat History Clearing on X Close
+**Problem:** Closing the side panel with X cleared all chat history.
+
+**Solution:**
+- Lifted `chatMessages` state from `ChatInterface` to `page.tsx`
+- Passed state down through `SidePanel` to `ChatInterface`
+- Added `ChatMessage` type export for proper typing
+- Chat now persists across panel open/close
+
+#### 6. ✅ New Chat / Reset Button
+**Problem:** No way to start a fresh conversation.
+
+**Solution:**
+- Added "New Chat" button with rotate icon at top of chat (when messages exist)
+- Clicking stops conversation, clears messages, resets greeting, starts fresh
+
+#### 7. ✅ Duplicate Messages ("Two Flowers Talking")
+**Problem:** Same user message and Flower response appearing twice.
+
+**Root Causes:**
+- `startFastRecording()` being called multiple times
+- `sendToFastVoiceService()` processing same audio twice
+- Response parsing loop adding messages multiple times
+
+**Solutions:**
+- Added guard in `startFastRecording()` to block if already listening/processing
+- Added `isProcessingVoiceRef` guard in `sendToFastVoiceService()`
+- Added `transcriptionProcessed` and `responseProcessed` flags in response parsing
+- Reset guards in `stopConversation()`
+
+#### 8. ✅ Auto-Scroll Not Working
+**Problem:** New messages at bottom hidden under input area.
+
+**Solution:**
+- Changed from smooth scroll to direct `scrollTop = scrollHeight`
+- Added dual timeout (100ms + 500ms) to handle content settling
+- Added more state dependencies to scroll trigger
+
+### Voice Service Updates (voice-chat-service repo)
+
+Updated `main.py` with:
+- Improved system prompt for better context retention
+- Increased history limit from 10 to 20 messages
+- Added debug logging for conversation history
+- Increased `max_tokens` from 150 to 200
+- Added `temperature: 0.7` for more natural responses
+
+### Known Limitations (MVP)
+
+| Limitation | Description |
+|------------|-------------|
+| **20 Message Context** | AI only remembers last 20 messages. Older context is "forgotten". Display shows all messages, but AI memory is limited. |
+| **No Persistent History** | Chat history only persists during browser session. Refreshing page or closing app loses history. (Future: Store in database with accounts) |
+| **Single Conversation** | One conversation at a time. No conversation threads or history list. |
+| **English/Spanish Only** | AI supports English and Spanish. Other languages not tested. |
+| **VAD Sensitivity** | May still occasionally trigger on loud ambient noise. Works best in quiet environments. |
+
+### Files Modified
+
+**ChatInterface.tsx:**
+- Added `ChatMessage` type with `id` field
+- Added `generateMessageId()` helper
+- Added `chatMessagesRef` for closure fix
+- Added `isProcessingVoiceRef` guard
+- Improved VAD parameters
+- Added transcription/response processing guards
+- Added "New Chat" button
+- Fixed auto-scroll
+
+**SidePanel.tsx:**
+- Added chat state props (`chatMessages`, `setChatMessages`)
+- Pass state to ChatInterface
+
+**page.tsx:**
+- Added `chatMessages` state at page level
+- Import `ChatMessage` type
+- Pass chat state to SidePanel
+
+### Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         FLOWER APP                               │
+├─────────────────────────────────────────────────────────────────┤
+│  page.tsx (state owner)                                          │
+│    └── chatMessages[] ←── persists across panel open/close       │
+│         │                                                        │
+│         ▼                                                        │
+│  SidePanel.tsx                                                   │
+│    └── ChatInterface.tsx                                         │
+│         ├── VAD (Voice Activity Detection)                       │
+│         ├── MediaRecorder (audio capture)                        │
+│         └── Audio playback (ElevenLabs TTS)                      │
+│                                                                  │
+│  Voice Pipeline:                                                 │
+│    User speaks → MediaRecorder → WebM blob                       │
+│         ↓                                                        │
+│    voice-chat-service (Render)                                   │
+│         ├── Groq Whisper (STT) → transcription                   │
+│         ├── OpenAI GPT-4o-mini (LLM) → response                  │
+│         └── ElevenLabs (TTS) → audio stream                      │
+│         ↓                                                        │
+│    Audio plays → Auto-restart listening (if conversation active) │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Testing Notes
+
+**What Works Well:**
+- ✅ Continuous voice conversation (speak → Flower replies → speak again)
+- ✅ Stop button properly stops conversation
+- ✅ New Chat starts fresh
+- ✅ Chat history persists when closing/reopening panel
+- ✅ Flower remembers recent context (within 20 messages)
+- ✅ Spanish/English language switching
+- ✅ Typing animation for Flower's responses
+- ✅ User messages in blue bubbles
+
+**Edge Cases to Monitor:**
+- Very noisy environments may trigger false positives
+- Very long conversations (>20 messages) lose early context
+- Network latency affects response time
+
+### Next Steps (Future Sessions)
+
+1. **Accounts & Persistence** - Store chat history in database
+2. **Multiple Conversations** - Conversation list/threads
+3. **Offline Support** - Cache messages, sync when online
+4. **Voice Settings** - Volume control, voice speed adjustment
+5. **Push Notifications** - Nudges from Flower
+6. **Garden Feature** - Rewards/gamification system
+
+---

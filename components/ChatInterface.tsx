@@ -247,9 +247,10 @@ export default function ChatInterface({
 
   // Speak greeting without starting listening (avoids mic permission popup on mobile)
   const speakGreetingOnly = async (text: string) => {
-    console.log('=== speakGreetingOnly called ===');
+    console.log('=== speakGreetingOnly called (mobile) ===');
     try {
-      setIsSpeaking(true);
+      // DON'T set isSpeaking yet - only set it when audio actually plays
+      // This prevents blocking the mic button while TTS loads
       
       // Add timeout to prevent hanging
       const controller = new AbortController();
@@ -274,35 +275,35 @@ export default function ChatInterface({
         audio.src = blobUrl;
         
         audio.onended = () => {
-          console.log('Greeting audio ended');
+          console.log('Greeting audio ended (mobile)');
           URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
-          // DON'T auto-start listening - user will tap mic
         };
         
         audio.onerror = (e) => {
-          console.error('Greeting audio error:', e);
+          console.error('Greeting audio error (mobile):', e);
           URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
         };
         
         try {
-          console.log('Attempting to play greeting audio...');
+          console.log('Attempting to play greeting audio (mobile)...');
           await audio.play();
-          console.log('Greeting audio playing');
+          // Only set isSpeaking=true AFTER play succeeds
+          setIsSpeaking(true);
+          console.log('Greeting audio playing on mobile');
         } catch (playErr) {
-          console.warn('Greeting play failed (mobile autoplay blocked?):', playErr);
+          console.warn('Greeting play failed (mobile autoplay blocked):', playErr);
           URL.revokeObjectURL(blobUrl);
-          setIsSpeaking(false);
-          // That's OK - user will see the text and can tap mic
+          // Don't set isSpeaking - audio never played, mic button is ready
         }
       } else {
         console.log('Greeting TTS not available (status:', response.status, ')');
-        setIsSpeaking(false);
+        // Don't set isSpeaking - nothing is playing
       }
     } catch (err) {
-      console.error('Greeting TTS fetch error:', err);
-      setIsSpeaking(false);
+      console.error('Greeting TTS fetch error (mobile):', err);
+      // Don't set isSpeaking - nothing is playing
     }
   };
 

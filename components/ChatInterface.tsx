@@ -135,7 +135,8 @@ export default function ChatInterface({
     console.log('=== Greeting useEffect ===', {
       hasGreetedRef: hasGreetedRef.current,
       chatMessagesLength: chatMessages.length,
-      USE_FAST_VOICE
+      USE_FAST_VOICE,
+      isMobile: isMobile()
     });
     
     // Skip if already greeted or there are existing messages (returning to conversation)
@@ -150,21 +151,99 @@ export default function ChatInterface({
     hasGreetedRef.current = true;
     console.log('Starting fresh greeting...');
     
-    // DON'T request mic permission here - it interrupts on mobile
-    // User will grant permission when they tap the mic button
-    
     const greeting = "Hi! How are you doing? What's on your mind?";
     const timestamp = Date.now();
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
     setAnimatingMessageId(timestamp); // Start typing animation
     
-    // DON'T auto-start conversation mode - let user tap mic
-    // This avoids the mic permission popup interrupting the greeting
-    // conversationActive.current = true;
-    
-    // Just speak the greeting (if audio works), don't auto-listen
-    speakGreetingOnly(greeting);
+    // On DESKTOP: Request mic permission and auto-start conversation
+    // On MOBILE: Don't auto-start (mic permission popup blocks everything)
+    if (!isMobile()) {
+      // Desktop: request mic permission early 
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          stream.getTracks().forEach(track => track.stop());
+          console.log('Mic permission granted (desktop)');
+        })
+        .catch(err => {
+          console.warn('Mic permission not granted:', err);
+        });
+      
+      // Auto-start conversation mode on desktop
+      conversationActive.current = true;
+      // Speak the greeting, then start listening
+      speakGreetingAndListen(greeting);
+    } else {
+      // Mobile: just show the greeting, user will tap mic when ready
+      speakGreetingOnly(greeting);
+    }
   }, []);
+
+  // Desktop: Speak greeting AND auto-start listening after
+  const speakGreetingAndListen = async (text: string) => {
+    console.log('=== speakGreetingAndListen called (desktop) ===');
+    try {
+      setIsSpeaking(true);
+      const response = await fetch(`${VOICE_SERVICE_URL}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        console.log('Got greeting audio, size:', audioBlob.size);
+        const audio = new Audio();
+        audioRef.current = audio;
+        
+        const blobUrl = URL.createObjectURL(audioBlob);
+        audio.src = blobUrl;
+        
+        audio.onended = () => {
+          console.log('Greeting audio ended');
+          URL.revokeObjectURL(blobUrl);
+          setIsSpeaking(false);
+          // Auto-start listening after greeting finishes
+          if (conversationActive.current) {
+            console.log('Starting listening after greeting...');
+            startFastRecording();
+          }
+        };
+        
+        audio.onerror = (e) => {
+          console.error('Greeting audio error:', e);
+          URL.revokeObjectURL(blobUrl);
+          setIsSpeaking(false);
+          if (conversationActive.current) {
+            startFastRecording();
+          }
+        };
+        
+        try {
+          await audio.play();
+          console.log('Greeting audio playing');
+        } catch (playErr) {
+          console.warn('Greeting play failed:', playErr);
+          setIsSpeaking(false);
+          if (conversationActive.current) {
+            startFastRecording();
+          }
+        }
+      } else {
+        console.log('Greeting TTS not available (status:', response.status, ')');
+        setIsSpeaking(false);
+        if (conversationActive.current) {
+          startFastRecording();
+        }
+      }
+    } catch (err) {
+      console.error('Greeting TTS error:', err);
+      setIsSpeaking(false);
+      if (conversationActive.current) {
+        startFastRecording();
+      }
+    }
+  };
 
   // Speak greeting without starting listening (avoids mic permission popup on mobile)
   const speakGreetingOnly = async (text: string) => {

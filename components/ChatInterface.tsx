@@ -98,13 +98,6 @@ export default function ChatInterface({
   // Fast voice service refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  
-  // Reset refs on mount (in case of stale values from previous session)
-  useEffect(() => {
-    isListeningRef.current = false;
-    isProcessingVoiceRef.current = false;
-    hasSpokenRef.current = false;
-  }, []);
   const streamRef = useRef<MediaStream | null>(null);
   const isProcessingVoiceRef = useRef(false); // Guard against duplicate voice processing
   
@@ -113,6 +106,20 @@ export default function ChatInterface({
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasSpokenRef = useRef(false);
   const isListeningRef = useRef(false); // Track listening state for VAD closure
+  
+  // Reset ALL refs on mount (MUST be after ref definitions)
+  useEffect(() => {
+    console.log('=== ChatInterface MOUNTED - Resetting all refs ===');
+    conversationActive.current = false;
+    isListeningRef.current = false;
+    isProcessingVoiceRef.current = false;
+    hasSpokenRef.current = false;
+    console.log('Refs reset:', {
+      conversationActive: conversationActive.current,
+      isListeningRef: isListeningRef.current,
+      isProcessingVoiceRef: isProcessingVoiceRef.current
+    });
+  }, []);
 
   // Detect if we're on mobile
   const isMobile = () => {
@@ -125,8 +132,15 @@ export default function ChatInterface({
   // Only greet if there are no existing messages (first time opening)
   const hasGreetedRef = useRef(false);
   useEffect(() => {
+    console.log('=== Greeting useEffect ===', {
+      hasGreetedRef: hasGreetedRef.current,
+      chatMessagesLength: chatMessages.length,
+      USE_FAST_VOICE
+    });
+    
     // Skip if already greeted or there are existing messages (returning to conversation)
     if (hasGreetedRef.current || chatMessages.length > 0) {
+      console.log('Skipping greeting - already greeted or has messages');
       hasGreetedRef.current = true; // Mark as greeted if returning to existing conversation
       return;
     }
@@ -134,6 +148,7 @@ export default function ChatInterface({
     if (!USE_FAST_VOICE) return;
     
     hasGreetedRef.current = true;
+    console.log('Starting fresh greeting...');
     
     // Request mic permission early (while we still have user gesture context from clicking Chat)
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -153,12 +168,14 @@ export default function ChatInterface({
     
     // Auto-start conversation mode
     conversationActive.current = true;
+    console.log('Set conversationActive to true');
     
     // Speak the greeting, then start listening
     speakGreetingAndListen(greeting);
   }, []);
 
   const speakGreetingAndListen = async (text: string) => {
+    console.log('=== speakGreetingAndListen called ===');
     try {
       setIsSpeaking(true);
       // Use ElevenLabs via our Render service for consistent voice
@@ -178,12 +195,12 @@ export default function ChatInterface({
         audio.src = blobUrl;
         
         audio.onended = () => {
-          console.log('Greeting audio ended');
+          console.log('Greeting audio ended - starting to listen');
           URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
           // Auto-start listening after greeting finishes
           if (conversationActive.current) {
-            console.log('Starting listening after greeting...');
+            console.log('conversationActive is true, calling startFastRecording');
             startFastRecording();
           }
         };
@@ -194,31 +211,36 @@ export default function ChatInterface({
           setIsSpeaking(false);
           // Still try to start listening even if audio failed
           if (conversationActive.current) {
+            console.log('Audio error but still starting listening');
             startFastRecording();
           }
         };
         
         try {
+          console.log('Attempting to play greeting audio...');
           await audio.play();
-          console.log('Greeting audio playing');
+          console.log('Greeting audio playing successfully');
         } catch (playErr) {
-          console.warn('Greeting play failed:', playErr);
+          console.warn('Greeting play failed (mobile autoplay blocked?):', playErr);
+          URL.revokeObjectURL(blobUrl);
           setIsSpeaking(false);
-          // Start listening even if play failed
+          // IMPORTANT: Start listening immediately since audio won't play
           if (conversationActive.current) {
+            console.log('Play failed, starting listening immediately');
             startFastRecording();
           }
         }
       } else {
-        console.log('Greeting TTS not available (status:', response.status, '), starting listening anyway');
+        console.log('Greeting TTS not available (status:', response.status, ')');
         setIsSpeaking(false);
         // Start listening even without greeting audio
         if (conversationActive.current) {
+          console.log('TTS failed, starting listening anyway');
           startFastRecording();
         }
       }
     } catch (err) {
-      console.error('Greeting TTS error:', err);
+      console.error('Greeting TTS fetch error:', err);
       setIsSpeaking(false);
       // Start listening even if greeting failed
       if (conversationActive.current) {
@@ -1253,6 +1275,15 @@ export default function ChatInterface({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('=== MIC BUTTON CLICKED ===', {
+                  isListening,
+                  isSpeaking,
+                  isProcessing,
+                  isTranscribing,
+                  isListeningRef: isListeningRef.current,
+                  conversationActive: conversationActive.current
+                });
+                
                 if (isListening) {
                   // Stop recording AND END conversation mode
                   console.log('Stop button pressed - stopping recording AND conversation');
@@ -1269,9 +1300,11 @@ export default function ChatInterface({
                   setIsSpeaking(false);
                 } else if (!isProcessing && !isTranscribing) {
                   // Start listening
-                  console.log('Mic button pressed - starting to listen');
+                  console.log('Mic button pressed - CALLING startFastRecording');
                   conversationActive.current = true;
                   startFastRecording();
+                } else {
+                  console.log('Mic button blocked by isProcessing or isTranscribing');
                 }
               }}
               disabled={isProcessing || isTranscribing}

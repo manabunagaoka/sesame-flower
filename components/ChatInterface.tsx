@@ -138,24 +138,30 @@ export default function ChatInterface({
       USE_FAST_VOICE
     });
     
-    // Skip if already greeted or there are existing messages (returning to conversation)
-    if (hasGreetedRef.current || chatMessages.length > 0) {
-      console.log('Skipping greeting - already greeted or has messages');
-      hasGreetedRef.current = true; // Mark as greeted if returning to existing conversation
+    if (!USE_FAST_VOICE) return;
+    
+    // RETURNING to existing conversation (has messages)
+    if (chatMessages.length > 0) {
+      console.log('Returning to existing conversation - mic ready when user taps');
+      hasGreetedRef.current = true;
+      // Don't auto-request mic - user will tap mic button when ready
+      // The mic button tap is a user gesture, so it will work on mobile
       return;
     }
     
-    if (!USE_FAST_VOICE) return;
+    // FIRST TIME - show greeting
+    if (hasGreetedRef.current) {
+      console.log('Already greeted, skipping');
+      return;
+    }
     
     hasGreetedRef.current = true;
     console.log('Starting fresh greeting...');
     
     // Request mic permission AND keep the stream for later use
-    // This preserves the user gesture context on mobile
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         console.log('Mic permission granted - keeping stream for later');
-        // Store the stream for startFastRecording to use
         streamRef.current = stream;
       })
       .catch(err => {

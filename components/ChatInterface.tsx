@@ -98,6 +98,13 @@ export default function ChatInterface({
   // Fast voice service refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  
+  // Reset refs on mount (in case of stale values from previous session)
+  useEffect(() => {
+    isListeningRef.current = false;
+    isProcessingVoiceRef.current = false;
+    hasSpokenRef.current = false;
+  }, []);
   const streamRef = useRef<MediaStream | null>(null);
   const isProcessingVoiceRef = useRef(false); // Guard against duplicate voice processing
   
@@ -313,11 +320,40 @@ export default function ChatInterface({
 
     // Cleanup: Revoke blob URLs when component unmounts
     return () => {
-      if (audioRef.current?.src && audioRef.current.src.startsWith('blob:')) {
-        URL.revokeObjectURL(audioRef.current.src);
+      // Stop all voice activity
+      conversationActive.current = false;
+      isListeningRef.current = false;
+      isProcessingVoiceRef.current = false;
+      
+      // Stop media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
       }
+      
+      // Stop audio stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      
+      // Cleanup audio - revoke blob URL before stopping
+      if (audioRef.current) {
+        if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      
+      // Cleanup audio context
       if (audioContextRef.current) {
         audioContextRef.current.close();
+      }
+      
+      // Clear silence timer
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
       }
     };
   }, []);

@@ -71,6 +71,52 @@ The app's signature UI is a **flower-shaped wheel** with 8 petals + center:
 
 ---
 
+# 🧭 Navigation Pattern
+
+**Design Decision: Clean UI with Minimal Chrome**
+
+We chose a minimalist navigation approach to keep focus on the Flower wheel:
+
+```
+┌─────────────────────────────────────────────┐
+│                                    [⚙️]     │  ← Settings (always visible)
+│                                             │
+│                                             │
+│                                             │
+│                  🌸                         │
+│              FLOWER WHEEL                   │
+│                                             │
+│                                             │
+│                                             │
+│ [←]                                         │  ← Back (only when in content)
+└─────────────────────────────────────────────┘
+```
+
+## Navigation Elements
+
+| Element | Visibility | Action |
+|---------|------------|--------|
+| **Settings Gear** ⚙️ | Always visible (top-right) | Opens settings menu |
+| **Back Arrow** ← | Only in content/petal views | Returns to Flower wheel |
+
+## Why No Bottom Nav?
+
+1. **The Flower IS the navigation** - Kids tap petals to navigate
+2. **Maximizes screen real estate** - Full flower visible
+3. **Simpler for kids** - Less visual clutter
+4. **Voice-first design** - "Hey Flower, show me videos"
+
+## Settings Menu Contents
+
+When user taps ⚙️:
+- 👤 Profile (name, photo, language)
+- 🌐 Language (English, Spanish, Chinese)
+- ❓ Help
+- ℹ️ About
+- 🚪 Logout
+
+---
+
 # 📱 Feature Details
 
 ## 🌸 CENTER: Flower AI Voice Assistant

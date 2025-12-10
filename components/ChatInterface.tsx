@@ -239,12 +239,12 @@ export default function ChatInterface({
     };
   }, [chatMessages, isProcessing, isSpeaking, isListening, isTranscribing, scrollToBottom]);
 
-  // Auto-focus input on mount
+  // Blur input when voice mode starts (prevents keyboard from blocking audio on mobile)
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
+    if (isListening || isSpeaking) {
+      inputRef.current?.blur();
     }
-  }, []);
+  }, [isListening, isSpeaking]);
 
   // Setup speech recognition
   useEffect(() => {
@@ -1085,23 +1085,23 @@ export default function ChatInterface({
         {chatMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
             <div>
-              <MessageCircle size={48} className="mx-auto mb-4 text-green-500" />
-              <p className="text-base text-gray-700 font-medium">Ready to chat!</p>
-              <p className="text-sm text-gray-500 mt-2">Type a message or tap the mic to speak</p>
+              <MessageCircle size={56} className="mx-auto mb-4 text-green-500" />
+              <p className="text-lg sm:text-xl text-gray-700 font-medium">Ready to chat!</p>
+              <p className="text-base text-gray-500 mt-2">Type a message or tap the mic to speak</p>
             </div>
           </div>
         ) : (
           <>
             {chatMessages.map((message, index) => (
-              <div key={message.id || `${message.timestamp}-${index}`} className={`text-sm break-words ${message.sender === 'user' ? 'flex justify-end' : ''}`}>
+              <div key={message.id || `${message.timestamp}-${index}`} className={`text-base sm:text-lg break-words ${message.sender === 'user' ? 'flex justify-end' : ''}`}>
                 {message.sender === 'user' ? (
-                  <div className="bg-blue-500 text-white px-4 py-2 rounded-2xl rounded-br-md max-w-[85%]">
+                  <div className="bg-blue-500 text-white px-4 py-3 rounded-2xl rounded-br-md max-w-[85%]">
                     {message.text}
                   </div>
                 ) : (
                   <div>
                     <span className="font-medium text-gray-600">Flower:</span>
-                    <span className="text-gray-800 ml-1">
+                    <span className="text-gray-800 ml-2">
                       {animatingMessageId === message.timestamp ? (
                         <TypewriterText 
                           text={message.text} 
@@ -1118,19 +1118,19 @@ export default function ChatInterface({
               </div>
             ))}
             {isListening && (
-              <div className="text-sm text-green-600 flex items-center gap-2">
+              <div className="text-base text-green-600 flex items-center gap-2">
                 <span className="flex gap-1">
-                  <span className="w-1.5 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className="w-1.5 h-4 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '100ms' }}></span>
-                  <span className="w-1.5 h-5 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></span>
-                  <span className="w-1.5 h-4 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></span>
-                  <span className="w-1.5 h-3 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></span>
+                  <span className="w-2 h-4 bg-green-500 rounded-full animate-pulse"></span>
+                  <span className="w-2 h-5 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '100ms' }}></span>
+                  <span className="w-2 h-6 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></span>
+                  <span className="w-2 h-5 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></span>
+                  <span className="w-2 h-4 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></span>
                 </span>
                 Listening...
               </div>
             )}
             {(isProcessing || isTranscribing) && !isListening && (
-              <div className="text-sm text-gray-500 italic flex items-center gap-2">
+              <div className="text-base text-gray-500 italic flex items-center gap-2">
                 <span className="flex gap-1">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -1195,7 +1195,7 @@ export default function ChatInterface({
             }}
             placeholder="Type or speak..."
             disabled={isProcessing}
-            className="flex-1 bg-gray-50 text-base outline-none placeholder-gray-500 disabled:opacity-50 px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            className="flex-1 bg-gray-50 text-lg outline-none placeholder-gray-500 disabled:opacity-50 px-4 py-3 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-1 focus:ring-green-500"
             autoComplete="off"
             spellCheck="false"
           />

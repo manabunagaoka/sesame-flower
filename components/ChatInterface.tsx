@@ -375,24 +375,26 @@ export default function ChatInterface({
     const greeting = "Hi! How are you doing? What's on your mind?";
     const ts = Date.now();
     
-    // Start TTS fetch immediately (don't wait)
-    setIsSpeaking(true);
-    const ttsPromise = fetch(`${VOICE_SERVICE_URL}/tts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: greeting })
-    }).catch(() => null);
-    
-    // Show message with typing animation
+    // Show message with typing animation first
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
-    // Wait for TTS and play
+    // Fetch and play TTS
+    setIsSpeaking(true);
     try {
-      const res = await ttsPromise;
-      if (res?.ok) {
-        const url = URL.createObjectURL(await res.blob());
-        const audio = new Audio(url);
+      const res = await fetch(`${VOICE_SERVICE_URL}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: greeting })
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        
+        // Use unlocked audio element if available
+        const audio = unlockedAudioRef.current || new Audio();
+        audio.src = url;
         audioRef.current = audio;
         
         const done = () => {
@@ -402,8 +404,15 @@ export default function ChatInterface({
         };
         
         audio.onended = done;
-        audio.onerror = () => { console.log('Audio error'); done(); };
-        await audio.play().catch((e) => { console.log('Play rejected:', e.message); done(); });
+        audio.onerror = () => { console.log('Greeting audio error'); done(); };
+        
+        try {
+          await audio.play();
+          console.log('Greeting audio playing');
+        } catch (e: unknown) {
+          console.log('Greeting play failed:', (e as Error).message);
+          done();
+        }
       } else {
         setIsSpeaking(false);
         if (conversationActive.current) startRecording();
@@ -465,22 +474,25 @@ export default function ChatInterface({
 
   const clearChat = () => { stopAll(); setChatMessages([]); hasGreetedRef.current = false; };
 
-  const handleMicClick = () => {
+  const handleMicClick = async () => {
     console.log('=== MIC CLICK ===', { isListening, isSpeaking, isProcessing, isTranscribing });
     
-    // CRITICAL: Unlock audio for mobile browsers on user gesture
+    // CRITICAL: Unlock audio for mobile browsers on user gesture (must complete before playing)
     if (!unlockedAudioRef.current) {
       console.log('Unlocking audio...');
       const audio = new Audio();
-      // Play silent audio to unlock
       audio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/jOMAAALIAUgAAAABJbmZvAAAADwAAAAMAAA';
       audio.volume = 0.01;
-      audio.play().then(() => {
+      try {
+        await audio.play();
         console.log('Audio unlocked!');
         audio.pause();
         audio.volume = 1;
+        audio.src = ''; // Clear the silent audio
         unlockedAudioRef.current = audio;
-      }).catch(e => console.log('Audio unlock failed:', e.message));
+      } catch (e: unknown) {
+        console.log('Audio unlock failed:', (e as Error).message);
+      }
     }
     
     if (isListening) {

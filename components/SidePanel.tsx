@@ -49,15 +49,23 @@ export default function SidePanel({
 
   // Calculate viewport height for Safari mobile
   useEffect(() => {
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     const updateHeight = () => {
-      setViewportHeight(`${window.innerHeight}px`);
+      // On iOS Safari, subtract extra space for the bottom toolbar
+      const offset = (isSafari || isIOS) ? 50 : 0;
+      setViewportHeight(`${window.innerHeight - offset}px`);
     };
     updateHeight();
     window.addEventListener('resize', updateHeight);
     window.addEventListener('orientationchange', updateHeight);
+    // Also update on scroll (Safari toolbar hides/shows on scroll)
+    window.addEventListener('scroll', updateHeight);
     return () => {
       window.removeEventListener('resize', updateHeight);
       window.removeEventListener('orientationchange', updateHeight);
+      window.removeEventListener('scroll', updateHeight);
     };
   }, []);
 

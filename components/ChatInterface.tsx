@@ -275,40 +275,49 @@ export default function ChatInterface({
       let off = 0;
       for (const c of chunks) { combined.set(c, off); off += c.length; }
       
-      const fullText = new TextDecoder().decode(combined);
-      const lines = fullText.split('\n');
+      // Find where JSON ends and audio begins by looking for MP3 header or non-text data
+      let jsonEndIndex = 0;
+      let transcription = '', aiResponse = '';
       
-      let transcription = '', aiResponse = '', bytesProcessed = 0;
+      // Look for JSON lines at the start
+      const textPart = new TextDecoder().decode(combined.slice(0, Math.min(5000, combined.length)));
+      const lines = textPart.split('\n');
       
       for (const line of lines) {
-        const lineBytes = new TextEncoder().encode(line + '\n').length;
         if (line.trim().startsWith('{')) {
           try {
             const json = JSON.parse(line.trim());
-            if (json.type === 'transcription' && json.text && !transcription) {
+            if (json.type === 'transcription' && json.text) {
               transcription = json.text;
               console.log('Transcription:', transcription);
               setChatMessages(prev => [...prev, { id: generateMessageId(), text: transcription, sender: 'user', timestamp: Date.now() }]);
               setIsTranscribing(false);
               setIsProcessing(true);
-              bytesProcessed += lineBytes;
-            } else if (json.type === 'response' && json.text && !aiResponse) {
+            } else if (json.type === 'response' && json.text) {
               aiResponse = json.text;
               console.log('Response:', aiResponse);
               const ts = Date.now();
               setChatMessages(prev => [...prev, { id: generateMessageId(), text: aiResponse, sender: 'ai', timestamp: ts }]);
               setAnimatingMessageId(ts);
               setIsProcessing(false);
-              bytesProcessed += lineBytes;
-            } else { break; }
-          } catch { break; }
+            }
+            jsonEndIndex += new TextEncoder().encode(line + '\n').length;
+          } catch {
+            // Not valid JSON, might be start of audio
+            break;
+          }
         } else if (line.trim() === '') {
-          bytesProcessed += lineBytes;
-        } else { break; }
+          jsonEndIndex += new TextEncoder().encode(line + '\n').length;
+        } else {
+          // Non-JSON non-empty line = audio data starts
+          break;
+        }
       }
       
-      const audioData = combined.slice(bytesProcessed);
-      console.log('Audio data extracted:', audioData.length, 'bytes, bytesProcessed:', bytesProcessed, 'total:', combined.length);
+      console.log('JSON ended at byte:', jsonEndIndex, 'total bytes:', combined.length);
+      
+      const audioData = combined.slice(jsonEndIndex);
+      console.log('Audio data extracted:', audioData.length, 'bytes');
       
       // Always try to play audio - user gesture context should allow it
       if (audioData.length > 100) {

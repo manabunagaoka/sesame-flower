@@ -84,20 +84,18 @@ export default function SidePanel({
         position: 'fixed',
         right: '0',
         top: '0',
-        bottom: '0',
         zIndex: 100,
         backgroundColor: '#ffffff',
         borderLeft: '1px solid #e9ecef',
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - env(safe-area-inset-bottom, 0px))',
-        maxHeight: '-webkit-fill-available',
+        // 100svh = small viewport height (excludes Safari bottom toolbar)
+        height: '100svh',
+        maxHeight: '100svh',
         overflowY: 'hidden',
         overscrollBehavior: 'none',
         width: '100%',
-        maxWidth: '28rem',
-        WebkitOverflowScrolling: 'touch',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+        maxWidth: '28rem'
       }}
           >
             {/* Header */}

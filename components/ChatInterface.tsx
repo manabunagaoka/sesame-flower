@@ -154,6 +154,18 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp }]);
     setAnimatingMessageId(timestamp);
     
+    // On mobile, skip TTS and go straight to listening (autoplay restrictions)
+    if (isMobile()) {
+      console.log('Mobile detected - skipping greeting TTS, starting listening');
+      setIsSpeaking(false);
+      if (conversationActive.current) {
+        // Small delay so user sees the greeting text first
+        setTimeout(() => startFastRecording(), 500);
+      }
+      return;
+    }
+    
+    // Desktop: play greeting audio then listen
     try {
       setIsSpeaking(true);
       const response = await fetch(`${VOICE_SERVICE_URL}/tts`, {

@@ -308,12 +308,15 @@ export default function ChatInterface({
       }
       
       const audioData = combined.slice(bytesProcessed);
-      console.log('Audio:', audioData.length, 'bytes');
+      console.log('Audio data extracted:', audioData.length, 'bytes, bytesProcessed:', bytesProcessed, 'total:', combined.length);
       
       // Always try to play audio - user gesture context should allow it
       if (audioData.length > 100) {
+        console.log('Attempting to play audio...');
         await playAudio(audioData);
+        console.log('playAudio completed');
       } else {
+        console.log('No audio data, skipping playback');
         // No audio data, continue to listening
         if (conversationActive.current) setTimeout(() => startRecording(), 500);
       }
@@ -324,6 +327,7 @@ export default function ChatInterface({
 
   const playAudio = (data: Uint8Array): Promise<void> => {
     return new Promise((resolve) => {
+      console.log('playAudio called, data size:', data.length);
       setIsSpeaking(true);
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
@@ -331,15 +335,16 @@ export default function ChatInterface({
       audioRef.current = audio;
       
       const cleanup = () => {
+        console.log('Audio cleanup');
         URL.revokeObjectURL(url);
         setIsSpeaking(false);
         if (conversationActive.current) setTimeout(() => startRecording(), 300);
         resolve();
       };
       
-      audio.onended = cleanup;
-      audio.onerror = cleanup;
-      audio.play().catch(cleanup);
+      audio.onended = () => { console.log('Audio ended'); cleanup(); };
+      audio.onerror = (e) => { console.log('Audio error:', e); cleanup(); };
+      audio.play().then(() => console.log('Audio playing')).catch((e) => { console.log('Audio play failed:', e.message); cleanup(); });
     });
   };
 
@@ -532,10 +537,11 @@ export default function ChatInterface({
         )}
       </div>
 
-      {/* Input Area - with generous bottom padding for mobile */}
+      {/* Input Area - with generous bottom padding for mobile Safari */}
       <div style={{ 
         flexShrink: 0, 
-        padding: '12px 16px 32px 16px',
+        padding: '12px 16px',
+        paddingBottom: 'calc(48px + env(safe-area-inset-bottom, 16px))',
         borderTop: '1px solid #eee', 
         background: 'white'
       }}>

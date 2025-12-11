@@ -90,13 +90,14 @@ export default function SidePanel({
         borderLeft: '1px solid #e9ecef',
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh',
-        maxHeight: '100dvh',
+        height: 'calc(100vh - env(safe-area-inset-bottom, 0px))',
+        maxHeight: '-webkit-fill-available',
         overflowY: 'hidden',
         overscrollBehavior: 'none',
         width: '100%',
         maxWidth: '28rem',
-        WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
       }}
           >
             {/* Header */}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { 
@@ -43,8 +43,23 @@ export default function SidePanel({
   setChatMessages 
 }: SidePanelProps) {
   const [showChat, setShowChat] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState('100vh');
   const isConnect = title.toLowerCase() === 'connect';
   const isChat = title.toLowerCase() === 'chat';
+
+  // Calculate viewport height for Safari mobile
+  useEffect(() => {
+    const updateHeight = () => {
+      setViewportHeight(`${window.innerHeight}px`);
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('orientationchange', updateHeight);
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('orientationchange', updateHeight);
+    };
+  }, []);
 
   // Auto-open chat for chat menu (but don't reset when panel closes to preserve state)
   React.useEffect(() => {
@@ -89,9 +104,9 @@ export default function SidePanel({
         borderLeft: '1px solid #e9ecef',
         display: 'flex',
         flexDirection: 'column',
-        // 100svh = small viewport height (excludes Safari bottom toolbar)
-        height: '100svh',
-        maxHeight: '100svh',
+        // Use JS-calculated height for Safari mobile compatibility
+        height: viewportHeight,
+        maxHeight: viewportHeight,
         overflowY: 'hidden',
         overscrollBehavior: 'none',
         width: '100%',

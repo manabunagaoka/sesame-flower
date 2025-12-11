@@ -71,7 +71,10 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const unlockedAudioRef = useRef<HTMLAudioElement | null>(null); // Persistent audio element unlocked by user gesture
   const conversationActive = useRef(false);
+  
+  const [viewportHeight, setViewportHeight] = useState('100vh');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -95,7 +98,15 @@ export default function ChatInterface({
     
     if (chatMessages.length > 0) hasGreetedRef.current = true;
     
+    // Calculate actual viewport height for Safari
+    const updateHeight = () => {
+      setViewportHeight(`${window.innerHeight}px`);
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    
     return () => {
+      window.removeEventListener('resize', updateHeight);
       conversationActive.current = false;
       isListeningRef.current = false;
       try { mediaRecorderRef.current?.stop(); } catch {}
@@ -340,7 +351,10 @@ export default function ChatInterface({
       setIsSpeaking(true);
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      
+      // Use the unlocked audio element if available (mobile), otherwise create new
+      const audio = unlockedAudioRef.current || new Audio();
+      audio.src = url;
       audioRef.current = audio;
       
       const cleanup = () => {
@@ -453,6 +467,21 @@ export default function ChatInterface({
 
   const handleMicClick = () => {
     console.log('=== MIC CLICK ===', { isListening, isSpeaking, isProcessing, isTranscribing });
+    
+    // CRITICAL: Unlock audio for mobile browsers on user gesture
+    if (!unlockedAudioRef.current) {
+      console.log('Unlocking audio...');
+      const audio = new Audio();
+      // Play silent audio to unlock
+      audio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/jOMAAALIAUgAAAABJbmZvAAAADwAAAAMAAA';
+      audio.volume = 0.01;
+      audio.play().then(() => {
+        console.log('Audio unlocked!');
+        audio.pause();
+        audio.volume = 1;
+        unlockedAudioRef.current = audio;
+      }).catch(e => console.log('Audio unlock failed:', e.message));
+    }
     
     if (isListening) {
       conversationActive.current = false;

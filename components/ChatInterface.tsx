@@ -864,11 +864,19 @@ export default function ChatInterface({
     
     // Extract audio bytes (everything after the JSON lines)
     const audioData = combined.slice(bytesProcessed);
-    console.log(`Parsed: transcription=${transcription?.length || 0} chars, response=${aiResponse?.length || 0} chars, audio=${audioData.length} bytes`);
+    console.log(`Parsed: transcription=${transcription?.length || 0} chars, response=${aiResponse?.length || 0} chars, audio=${audioData.length} bytes, bytesProcessed=${bytesProcessed}`);
     
-    // Play audio
+    // Play audio - the voice service returns audio with the response
     if (audioData.length > 100) {
+      console.log('Playing response audio...');
       await playFastAudio([audioData]);
+    } else {
+      console.log('No audio data received, skipping playback. Total combined length:', combined.length);
+      // Still continue conversation even without audio
+      if (conversationActive.current) {
+        console.log('No audio but continuing conversation...');
+        setTimeout(() => startFastRecording(), 300);
+      }
     }
     } finally {
       isProcessingVoiceRef.current = false;

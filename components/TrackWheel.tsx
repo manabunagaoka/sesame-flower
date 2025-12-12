@@ -104,6 +104,12 @@ export default function TrackWheel({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isMenuOpen) return;
       
+      // Don't intercept keys when user is typing in an input or textarea
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        return;
+      }
+      
       if (e.key === 'ArrowLeft') {
         onRotate((currentAngle - 45 + 360) % 360);
       } else if (e.key === 'ArrowRight') {

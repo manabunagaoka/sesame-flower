@@ -298,6 +298,18 @@ export default function ChatInterface({
             if (json.type === 'transcription' && json.text) {
               transcription = json.text;
               console.log('Transcription:', transcription);
+              
+              // Filter out likely hallucinations (common Whisper artifacts on silence/noise)
+              const hallucinations = ['thank you', 'thanks', 'bye', 'goodbye', 'you', 'okay', 'ok', 'yes', 'no', 'um', 'uh'];
+              const cleanText = transcription.toLowerCase().trim().replace(/[.!?,]/g, '');
+              if (hallucinations.includes(cleanText) || transcription.length < 3) {
+                console.log('Filtered likely hallucination:', transcription);
+                // Don't add to chat, just continue to listening
+                if (conversationActive.current) setTimeout(() => startRecording(), 500);
+                setIsTranscribing(false);
+                return;
+              }
+              
               setChatMessages(prev => [...prev, { id: generateMessageId(), text: transcription, sender: 'user', timestamp: Date.now() }]);
               setIsTranscribing(false);
               setIsProcessing(true);

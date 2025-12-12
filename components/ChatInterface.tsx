@@ -540,7 +540,7 @@ export default function ChatInterface({
         background: 'white'
       }}>
         {/* Text Input */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
           <input
             ref={inputRef}
             type="text"
@@ -549,18 +549,36 @@ export default function ChatInterface({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleTextSubmit(); }}}
             placeholder="Type a message..."
             disabled={isProcessing}
-            style={{ flex: 1, padding: '10px 16px', fontSize: '16px', border: '1px solid #e5e7eb', borderRadius: '20px', outline: 'none', background: '#f9fafb' }}
+            style={{ 
+              flex: 1, 
+              minWidth: 0,
+              padding: '10px 16px', 
+              fontSize: '16px', 
+              border: '1px solid #e5e7eb', 
+              borderRadius: '20px', 
+              outline: 'none', 
+              background: '#f9fafb',
+              WebkitAppearance: 'none',
+              appearance: 'none'
+            }}
           />
           <button 
             onClick={handleTextSubmit} 
             disabled={!textInput.trim() || isProcessing}
             style={{ 
-              padding: '10px', 
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              minHeight: '40px',
+              flexShrink: 0,
               borderRadius: '50%', 
               background: textInput.trim() ? '#22c55e' : '#e5e7eb', 
               border: 'none', 
               cursor: textInput.trim() && !isProcessing ? 'pointer' : 'not-allowed',
-              opacity: textInput.trim() ? 1 : 0.5
+              opacity: textInput.trim() ? 1 : 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             <Send size={20} color="white" />

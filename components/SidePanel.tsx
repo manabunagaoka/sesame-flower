@@ -220,11 +220,13 @@ export default function SidePanel({
                     transition={{ 
                       duration: 0.2
                     }}
-                    className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden"
                     style={{
-                      overscrollBehavior: 'none',
-                      position: 'relative',
-                      minHeight: '400px'
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: 0,
+                      overflow: 'hidden',
+                      backgroundColor: 'white'
                     }}
                   >
                     <ChatInterface 

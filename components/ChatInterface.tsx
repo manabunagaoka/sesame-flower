@@ -418,21 +418,46 @@ export default function ChatInterface({
     if (!text || isProcessing) return;
     
     setTextInput('');
+    setIsProcessing(true);
     
     const userMsg = { id: generateMessageId(), text, sender: 'user' as const, timestamp: Date.now() };
     setChatMessages(prev => [...prev, userMsg]);
     
-    // Text chat is not yet supported by the voice service - prompt user to use voice
-    setTimeout(() => {
+    try {
+      // Use local API route for text chat
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.reply) {
+          const ts = Date.now();
+          setChatMessages(prev => [...prev, { 
+            id: generateMessageId(), 
+            text: data.reply, 
+            sender: 'ai', 
+            timestamp: ts 
+          }]);
+          setAnimatingMessageId(ts);
+        }
+      } else {
+        throw new Error('API error');
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
       const ts = Date.now();
       setChatMessages(prev => [...prev, { 
         id: generateMessageId(), 
-        text: "I'd love to chat! Please tap the microphone button to talk with me - I respond best to voice. 🎤", 
+        text: "Sorry, I couldn't process that. Please try again or use the mic button!", 
         sender: 'ai', 
         timestamp: ts 
       }]);
-      setAnimatingMessageId(ts);
-    }, 500);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const clearChat = () => { stopAll(); setChatMessages([]); hasGreetedRef.current = false; };
@@ -545,32 +570,50 @@ export default function ChatInterface({
             ref={inputRef}
             type="text"
             value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleTextSubmit(); }}}
+            onChange={(e) => {
+              console.log('Input change:', e.target.value);
+              setTextInput(e.target.value);
+            }}
+            onKeyDown={(e) => { 
+              console.log('KeyDown:', e.key);
+              if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                handleTextSubmit(); 
+              }
+            }}
             placeholder="Type a message..."
             disabled={isProcessing}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             style={{ 
               flex: 1, 
               minWidth: 0,
+              height: '44px',
               padding: '10px 16px', 
               fontSize: '16px', 
               border: '1px solid #e5e7eb', 
-              borderRadius: '20px', 
+              borderRadius: '22px', 
               outline: 'none', 
               background: '#f9fafb',
               WebkitAppearance: 'none',
-              appearance: 'none'
+              appearance: 'none',
+              WebkitTapHighlightColor: 'transparent'
             }}
           />
           <button 
             onClick={handleTextSubmit} 
             disabled={!textInput.trim() || isProcessing}
             style={{ 
-              width: '40px',
-              height: '40px',
-              minWidth: '40px',
-              minHeight: '40px',
+              width: '44px',
+              height: '44px',
+              minWidth: '44px',
+              minHeight: '44px',
+              maxWidth: '44px',
+              maxHeight: '44px',
               flexShrink: 0,
+              flexGrow: 0,
               borderRadius: '50%', 
               background: textInput.trim() ? '#22c55e' : '#e5e7eb', 
               border: 'none', 
@@ -578,7 +621,9 @@ export default function ChatInterface({
               opacity: textInput.trim() ? 1 : 0.5,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+              padding: 0
             }}
           >
             <Send size={20} color="white" />
@@ -586,13 +631,15 @@ export default function ChatInterface({
         </div>
 
         {/* Mic Button */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '8px' }}>
           <button
             onClick={handleMicClick}
             disabled={isProcessing || isTranscribing}
             style={{
               width: '64px',
               height: '64px',
+              minWidth: '64px',
+              minHeight: '64px',
               borderRadius: '50%',
               border: 'none',
               cursor: isProcessing || isTranscribing ? 'not-allowed' : 'pointer',
@@ -602,7 +649,9 @@ export default function ChatInterface({
               background: isListening ? '#ef4444' : isSpeaking ? '#3b82f6' : '#f3f4f6',
               transform: isListening ? 'scale(1.1)' : 'scale(1)',
               transition: 'all 0.2s',
-              opacity: isProcessing || isTranscribing ? 0.5 : 1
+              opacity: isProcessing || isTranscribing ? 0.5 : 1,
+              boxSizing: 'border-box',
+              padding: 0
             }}
           >
             {isListening ? (

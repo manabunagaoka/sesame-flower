@@ -71,6 +71,7 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const conversationActive = useRef(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -335,24 +336,49 @@ export default function ChatInterface({
   };
 
   const playAudio = (data: Uint8Array): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       console.log('playAudio called, data size:', data.length);
       setIsSpeaking(true);
+      
+      const cleanup = () => {
+        setIsSpeaking(false);
+        if (conversationActive.current) setTimeout(() => startRecording(), 300);
+        resolve();
+      };
+
+      // Try Web Audio API first (better mobile support)
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        
+        // Resume context if suspended (required on mobile after user interaction)
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        
+        const audioBuffer = await ctx.decodeAudioData(data.buffer.slice(0) as ArrayBuffer);
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        source.onended = cleanup;
+        source.start(0);
+        console.log('Playing via Web Audio API');
+        return;
+      } catch (e) {
+        console.log('Web Audio failed, falling back to HTML Audio:', e);
+      }
+      
+      // Fallback to HTML Audio
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
       
-      const cleanup = () => {
-        URL.revokeObjectURL(url);
-        setIsSpeaking(false);
-        if (conversationActive.current) setTimeout(() => startRecording(), 300);
-        resolve();
-      };
-      
-      audio.onended = cleanup;
-      audio.onerror = cleanup;
-      audio.play().catch(cleanup);
+      audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); cleanup(); };
+      audio.play().catch(() => { URL.revokeObjectURL(url); cleanup(); });
     });
   };
 
@@ -364,6 +390,14 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
+    // Initialize AudioContext on user interaction (required for mobile)
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+    
     // Fetch and play TTS
     setIsSpeaking(true);
     try {
@@ -374,20 +408,11 @@ export default function ChatInterface({
       });
       
       if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
+        const arrayBuffer = await res.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
         
-        const done = () => {
-          URL.revokeObjectURL(url);
-          setIsSpeaking(false);
-          if (conversationActive.current) startRecording();
-        };
-        
-        audio.onended = done;
-        audio.onerror = done;
-        await audio.play().catch(done);
+        // Use playAudio which handles Web Audio API
+        await playAudio(data);
       } else {
         setIsSpeaking(false);
         if (conversationActive.current) startRecording();

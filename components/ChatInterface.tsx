@@ -116,6 +116,13 @@ export default function ChatInterface({
     return () => clearTimeout(t);
   }, [chatMessages, scrollToBottom]);
 
+  // Scroll when status changes (so user sees Listening/Thinking immediately)
+  useEffect(() => {
+    if (isListening || isProcessing || isTranscribing) {
+      setTimeout(scrollToBottom, 50);
+    }
+  }, [isListening, isProcessing, isTranscribing, scrollToBottom]);
+
   useEffect(() => {
     if (isListening || isSpeaking) inputRef.current?.blur();
   }, [isListening, isSpeaking]);
@@ -575,7 +582,7 @@ export default function ChatInterface({
                     <span key={i} style={{ width: '6px', height: '6px', background: '#4ade80', borderRadius: '50%', animation: 'bounce 1s infinite', animationDelay: `${i*150}ms` }} />
                   ))}
                 </span>
-                {isTranscribing ? 'Processing...' : 'Thinking...'}
+                Thinking...
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { 
@@ -42,41 +42,11 @@ export default function SidePanel({
   chatMessages,
   setChatMessages 
 }: SidePanelProps) {
-  const [showChat, setShowChat] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState('100vh');
   const isConnect = title.toLowerCase() === 'connect';
   const isChat = title.toLowerCase() === 'chat';
 
-  // Calculate viewport height for Safari mobile
-  useEffect(() => {
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    const updateHeight = () => {
-      // On iOS Safari, subtract extra space for the bottom toolbar
-      const offset = (isSafari || isIOS) ? 50 : 0;
-      setViewportHeight(`${window.innerHeight - offset}px`);
-    };
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    window.addEventListener('orientationchange', updateHeight);
-    // Also update on scroll (Safari toolbar hides/shows on scroll)
-    window.addEventListener('scroll', updateHeight);
-    return () => {
-      window.removeEventListener('resize', updateHeight);
-      window.removeEventListener('orientationchange', updateHeight);
-      window.removeEventListener('scroll', updateHeight);
-    };
-  }, []);
-
-  // Auto-open chat for chat menu (but don't reset when panel closes to preserve state)
-  React.useEffect(() => {
-    if (isOpen && isChat && !showChat) {
-      setShowChat(true);
-    }
-    // Note: We intentionally DON'T reset showChat when panel closes
-    // This preserves chat history when user closes and reopens the panel
-  }, [isOpen, isChat, showChat]);
+  // Show chat only for Chat tab, hide for other tabs
+  const showChat = isChat;
   return (
     <AnimatePresence>
       {isOpen && (
@@ -112,9 +82,8 @@ export default function SidePanel({
         borderLeft: '1px solid #e9ecef',
         display: 'flex',
         flexDirection: 'column',
-        // Use JS-calculated height for Safari mobile compatibility
-        height: viewportHeight,
-        maxHeight: viewportHeight,
+        height: '100vh',
+        maxHeight: '100vh',
         overflowY: 'hidden',
         overscrollBehavior: 'none',
         width: '100%',
@@ -172,12 +141,8 @@ export default function SidePanel({
                         'cursor-pointer group'
                       )}
                       onClick={() => {
-                        if ((isConnect && (item.title.toLowerCase().includes('chat') || item.title.toLowerCase().includes('support') || item.title.toLowerCase().includes('talk'))) || isChat) {
-                          setShowChat(true);
-                        } else {
-                          onContentSelect(item);
-                          onClose();
-                        }
+                        onContentSelect(item);
+                        onClose();
                       }}
                     >
                       {/* Icon or Thumbnail */}

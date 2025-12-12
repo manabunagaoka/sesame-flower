@@ -71,10 +71,7 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const unlockedAudioRef = useRef<HTMLAudioElement | null>(null); // Persistent audio element unlocked by user gesture
   const conversationActive = useRef(false);
-  
-  const [viewportHeight, setViewportHeight] = useState('100vh');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -98,15 +95,7 @@ export default function ChatInterface({
     
     if (chatMessages.length > 0) hasGreetedRef.current = true;
     
-    // Calculate actual viewport height for Safari
-    const updateHeight = () => {
-      setViewportHeight(`${window.innerHeight}px`);
-    };
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    
     return () => {
-      window.removeEventListener('resize', updateHeight);
       conversationActive.current = false;
       isListeningRef.current = false;
       try { mediaRecorderRef.current?.stop(); } catch {}
@@ -351,23 +340,19 @@ export default function ChatInterface({
       setIsSpeaking(true);
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
-      
-      // Use the unlocked audio element if available (mobile), otherwise create new
-      const audio = unlockedAudioRef.current || new Audio();
-      audio.src = url;
+      const audio = new Audio(url);
       audioRef.current = audio;
       
       const cleanup = () => {
-        console.log('Audio cleanup');
         URL.revokeObjectURL(url);
         setIsSpeaking(false);
         if (conversationActive.current) setTimeout(() => startRecording(), 300);
         resolve();
       };
       
-      audio.onended = () => { console.log('Audio ended'); cleanup(); };
-      audio.onerror = (e) => { console.log('Audio error:', e); cleanup(); };
-      audio.play().then(() => console.log('Audio playing')).catch((e) => { console.log('Audio play failed:', e.message); cleanup(); });
+      audio.onended = cleanup;
+      audio.onerror = cleanup;
+      audio.play().catch(cleanup);
     });
   };
 
@@ -391,10 +376,7 @@ export default function ChatInterface({
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        
-        // Use unlocked audio element if available
-        const audio = unlockedAudioRef.current || new Audio();
-        audio.src = url;
+        const audio = new Audio(url);
         audioRef.current = audio;
         
         const done = () => {
@@ -404,15 +386,8 @@ export default function ChatInterface({
         };
         
         audio.onended = done;
-        audio.onerror = () => { console.log('Greeting audio error'); done(); };
-        
-        try {
-          await audio.play();
-          console.log('Greeting audio playing');
-        } catch (e: unknown) {
-          console.log('Greeting play failed:', (e as Error).message);
-          done();
-        }
+        audio.onerror = done;
+        await audio.play().catch(done);
       } else {
         setIsSpeaking(false);
         if (conversationActive.current) startRecording();
@@ -474,26 +449,8 @@ export default function ChatInterface({
 
   const clearChat = () => { stopAll(); setChatMessages([]); hasGreetedRef.current = false; };
 
-  const handleMicClick = async () => {
+  const handleMicClick = () => {
     console.log('=== MIC CLICK ===', { isListening, isSpeaking, isProcessing, isTranscribing });
-    
-    // CRITICAL: Unlock audio for mobile browsers on user gesture (must complete before playing)
-    if (!unlockedAudioRef.current) {
-      console.log('Unlocking audio...');
-      const audio = new Audio();
-      audio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/jOMAAALIAUgAAAABJbmZvAAAADwAAAAMAAA';
-      audio.volume = 0.01;
-      try {
-        await audio.play();
-        console.log('Audio unlocked!');
-        audio.pause();
-        audio.volume = 1;
-        audio.src = ''; // Clear the silent audio
-        unlockedAudioRef.current = audio;
-      } catch (e: unknown) {
-        console.log('Audio unlock failed:', (e as Error).message);
-      }
-    }
     
     if (isListening) {
       conversationActive.current = false;

@@ -1,4 +1,4 @@
-# Session Notes - December 12, 2025
+# Session Notes - December 11, 2025
 
 ## Summary
 This session focused on fixing multiple issues with the mobile voice chat interface that were causing problems on both mobile (Safari/Chrome) and desktop browsers.
@@ -48,6 +48,19 @@ This session focused on fixing multiple issues with the mobile voice chat interf
 **Fix:** Changed all status text to "Thinking..." for a more natural feel.
 **File:** `components/ChatInterface.tsx`
 
+### 8. ✅ Text Chat Speed (15x Faster)
+**Problem:** Text chat was taking 5+ seconds to respond.
+**Root Cause:** `/api/chat` was using GPT-4-turbo-preview which is slow.
+**Fix:** Switched to Groq llama-3.3-70b-versatile (~0.3s response time), with OpenAI fallback if Groq not configured.
+**File:** `app/api/chat/route.ts`
+**Note:** Requires `GROQ_API_KEY` in Vercel environment variables.
+
+### 9. ✅ Whisper Hallucinations on Stop
+**Problem:** When stopping recording, Whisper would transcribe silence/noise as "Thank you" and send it.
+**Root Cause:** Whisper model hallucinates common phrases on near-silent audio.
+**Fix:** Added filter to ignore common hallucinations: "thank you", "thanks", "bye", "goodbye", "you", "okay", "ok", "yes", "no", "um", "uh", and any text < 3 characters.
+**File:** `components/ChatInterface.tsx` (sendToVoiceService function)
+
 ## Current Architecture
 
 ### Voice Service (External)
@@ -58,7 +71,7 @@ This session focused on fixing multiple issues with the mobile voice chat interf
   - `/voice-chat` - Voice conversation (POST with FormData: audio file + conversation_history)
 
 ### Local API Routes
-- `/api/chat` - Text chat using OpenAI GPT-4 (POST with JSON `{message: string}`)
+- `/api/chat` - Text chat using Groq llama-3.3-70b (fast), with OpenAI fallback
 - `/api/tts` - TTS (not currently used)
 - `/api/whisper` - Whisper transcription (not currently used)
 
@@ -78,9 +91,10 @@ This session focused on fixing multiple issues with the mobile voice chat interf
 
 ## Files Modified This Session
 1. `components/TrackWheel.tsx` - Added input field detection for keyboard handler
-2. `components/ChatInterface.tsx` - Multiple fixes (text chat, audio playback, scrolling, UI)
+2. `components/ChatInterface.tsx` - Multiple fixes (text chat, audio playback, scrolling, UI, hallucination filter)
 3. `components/SidePanel.tsx` - Removed minHeight constraint
-4. `next.config.ts` - Build trigger (cosmetic)
+4. `app/api/chat/route.ts` - Switched to Groq with OpenAI fallback
+5. `next.config.ts` - Build trigger (cosmetic)
 
 ## Testing Checklist
 - [x] Desktop: Typing works with spaces
@@ -102,7 +116,32 @@ This session focused on fixing multiple issues with the mobile voice chat interf
 - **URL:** https://flower-silk-zeta.vercel.app/
 - **Note:** May take 1-2 minutes for Vercel to rebuild after push
 
+### Environment Variables Required
+**Vercel:**
+- `GROQ_API_KEY` - For fast text chat
+- `OPENAI_API_KEY` - Fallback for text chat
+- `NEXT_PUBLIC_VOICE_SERVICE_URL` - Points to Render voice service
+
+**Render (voice-chat-service):**
+- `GROQ_API_KEY` - For Whisper transcription
+- `OPENAI_API_KEY` - For LLM responses
+- `ELEVENLABS_API_KEY` - For TTS
+- `ELEVENLABS_VOICE_ID` - Voice selection
+
 ## Known Remaining Considerations
 - Voice response speed depends on external voice service latency
 - TypewriterText animation speed is 35ms per character (adjustable)
 - Web Audio API may not work on very old browsers (fallback to HTML5 Audio exists)
+
+---
+
+## TODO for December 12, 2025
+
+### Testing
+- [ ] Final mobile test (Safari & Chrome) - voice and text chat full flow
+
+### UI/UX Improvements (Other Parts of App)
+- [ ] Review and improve other menu sections
+- [ ] Polish visual design and animations
+- [ ] Improve navigation feedback
+- [ ] Add any missing content/features

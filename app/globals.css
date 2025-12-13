@@ -151,3 +151,25 @@ a {
 .modal-content {
   z-index: 50;
 }
+
+/* Responsive wheel container sizing */
+.wheel-container {
+  width: min(80vw, 400px);
+  height: min(80vw, 400px);
+}
+
+/* Tablet landscape and desktop: slightly smaller wheel, fixed size */
+@media (min-width: 768px) {
+  .wheel-container {
+    width: min(45vh, 400px);
+    height: min(45vh, 400px);
+  }
+}
+
+/* Large desktop: can be a bit bigger */
+@media (min-width: 1024px) {
+  .wheel-container {
+    width: min(50vh, 450px);
+    height: min(50vh, 450px);
+  }
+}

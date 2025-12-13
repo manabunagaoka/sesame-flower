@@ -188,11 +188,68 @@ export default function HomePage() {
         </button>
       </header>
       
-      {/* Main Layout - Upper Content + Lower Wheel */}
-      <main className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
-        {/* Content Window - Upper Half */}
+      {/* Main Layout - Responsive: vertical on mobile, horizontal on tablet/desktop */}
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{ minHeight: 0 }}>
+        
+        {/* Wheel Container - Bottom on mobile, Left on tablet/desktop */}
         <div 
-          className="flex-1 bg-white overflow-y-auto p-4" 
+          className="order-2 md:order-1 bg-white flex items-center justify-center p-4 md:border-r md:border-t-0 md:shadow-none" 
+          style={{ 
+            boxShadow: '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
+            borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          {/* Wheel size: responsive to viewport but capped */}
+          <div 
+            className="relative flex items-center justify-center wheel-container"
+          >
+            {/* Menu Wheel */}
+            <AnimatePresence mode="wait">
+              {isMenuOpen && (
+                <motion.div
+                  key="menu-wheel"
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20,
+                    duration: ANIMATION_DURATION / 1000,
+                  }}
+                >
+                  <MenuWheel
+                    menuState={menuState}
+                    selectedMenu={selectedMenu}
+                    onMenuClick={handleMenuClick}
+                    isOpen={isMenuOpen}
+                    currentAngle={wheelAngle}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* iPod Track Wheel */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <TrackWheel
+                isMenuOpen={isMenuOpen}
+                onToggle={handleMenuToggle}
+                onRotate={handleWheelRotate}
+                currentAngle={wheelAngle}
+                menuState={menuState}
+                onActivate={handleWheelActivate}
+                onBack={handleBack}
+                selectedMenu={selectedMenu}
+                menuItems={currentMenuItems}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Content Window - Top on mobile, Right on tablet/desktop */}
+        <div 
+          className="order-1 md:order-2 flex-1 bg-white overflow-y-auto p-4" 
           style={{ 
             minHeight: 0,
             boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.06)'
@@ -241,60 +298,6 @@ export default function HomePage() {
               )}
             </div>
           )}
-        </div>
-        
-        {/* Wheel Container - Lower Bottom */}
-        <div 
-          className="bg-white flex items-center justify-center p-4" 
-          style={{ 
-            minHeight: '50vh',
-            boxShadow: '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
-            borderTop: '1px solid rgba(0, 0, 0, 0.05)'
-          }}
-        >
-          <div className="relative w-[80vw] h-[80vw] max-w-[400px] max-h-[400px] flex items-center justify-center">
-            {/* Menu Wheel */}
-            <AnimatePresence mode="wait">
-              {isMenuOpen && (
-                <motion.div
-                  key="menu-wheel"
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20,
-                    duration: ANIMATION_DURATION / 1000,
-                  }}
-                >
-                  <MenuWheel
-                    menuState={menuState}
-                    selectedMenu={selectedMenu}
-                    onMenuClick={handleMenuClick}
-                    isOpen={isMenuOpen}
-                    currentAngle={wheelAngle}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* iPod Track Wheel */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <TrackWheel
-                isMenuOpen={isMenuOpen}
-                onToggle={handleMenuToggle}
-                onRotate={handleWheelRotate}
-                currentAngle={wheelAngle}
-                menuState={menuState}
-                onActivate={handleWheelActivate}
-                onBack={handleBack}
-                selectedMenu={selectedMenu}
-                menuItems={currentMenuItems}
-              />
-            </div>
-          </div>
         </div>
       </main>
 

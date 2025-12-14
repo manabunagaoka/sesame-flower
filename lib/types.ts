@@ -18,6 +18,9 @@ export interface ContentItem {
   youtubePlaylistId?: string;  // For YouTube playlist embeds
   youtubeVideoId?: string;     // For individual YouTube videos
   gameUrl?: string;            // For external game embeds (Sesame Street, etc.)
+  eventUrl?: string;           // For external event links (Eventbrite, etc.)
+  venue?: string;              // Event venue name
+  isFree?: boolean;            // Whether event is free
 }
 
 // For menus with tabs/categories (like Learning)

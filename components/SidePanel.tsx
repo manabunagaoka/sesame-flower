@@ -201,8 +201,13 @@ export default function SidePanel({
                         'cursor-pointer group'
                       )}
                       onClick={() => {
-                        onContentSelect(item);
-                        onClose();
+                        if (item.eventUrl) {
+                          // Open external event URL in new tab
+                          window.open(item.eventUrl, '_blank', 'noopener,noreferrer');
+                        } else {
+                          onContentSelect(item);
+                          onClose();
+                        }
                       }}
                     >
                       {/* Icon or Thumbnail */}
@@ -251,23 +256,44 @@ export default function SidePanel({
                         <p className="text-sm text-gray-500 mt-1 truncate">
                           {item.description}
                         </p>
+                        {item.venue && (
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">
+                            📍 {item.venue} {item.isFree && <span className="text-green-600 ml-1">• Gratis</span>}
+                          </p>
+                        )}
                       </div>
 
-                      {/* Chevron */}
+                      {/* Chevron or External Link indicator */}
                       <div className="ml-3 transition-transform duration-200 group-hover:translate-x-1">
-                        <svg 
-                          className="w-5 h-5 text-gray-400" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
-                            d="M9 5l7 7-7 7" 
-                          />
-                        </svg>
+                        {item.eventUrl ? (
+                          <svg 
+                            className="w-5 h-5 text-gray-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                            />
+                          </svg>
+                        ) : (
+                          <svg 
+                            className="w-5 h-5 text-gray-400" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M9 5l7 7-7 7" 
+                            />
+                          </svg>
+                        )}
                       </div>
                     </motion.div>
                   );

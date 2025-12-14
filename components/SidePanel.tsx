@@ -201,7 +201,7 @@ export default function SidePanel({
                       }}
                     >
                       {/* Icon or Thumbnail */}
-                      {item.videoId && item.thumbnail ? (
+                      {item.thumbnail && (item.videoId || item.youtubePlaylistId || item.youtubeVideoId) ? (
                         <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
                           <img 
                             src={item.thumbnail} 
@@ -211,6 +211,10 @@ export default function SidePanel({
                           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
                             <PlayCircle size={28} className="text-white drop-shadow" />
                           </div>
+                        </div>
+                      ) : (item.youtubePlaylistId || item.youtubeVideoId) && !item.thumbnail ? (
+                        <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden bg-red-600 flex items-center justify-center">
+                          <PlayCircle size={28} className="text-white" />
                         </div>
                       ) : (
                         <div className={clsx(

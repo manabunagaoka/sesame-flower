@@ -154,9 +154,24 @@ export const MENU_CONTENT: MenuContent = {
   videos: [
     {
       icon: 'MonitorPlay',
-      title: 'Sesame Street Videos',
-      description: 'Watch the latest videos',
+      title: 'New Videos',
+      description: 'Latest Sesame Street content',
       youtubePlaylistId: 'PL8TioFHubWFsnPhBmrDQ8dtoXxghDMKxr',
+      thumbnail: 'https://img.youtube.com/vi/LDP08F3op80/mqdefault.jpg',
+    },
+    {
+      icon: 'Music',
+      title: 'Songs',
+      description: 'Sing along with Sesame Street',
+      youtubeVideoId: 'LDP08F3op80',
+      thumbnail: 'https://img.youtube.com/vi/LDP08F3op80/mqdefault.jpg',
+    },
+    {
+      icon: 'MonitorPlay',
+      title: 'Plaza Sésamo',
+      description: 'Sesame Street en Español',
+      youtubePlaylistId: 'PL1vMhg3AawgTYlcjJG9MTiMLNMHSAIxEQ',
+      thumbnail: 'https://img.youtube.com/vi/9gFT0bSLNEA/mqdefault.jpg',
     },
   ],
   learning: {

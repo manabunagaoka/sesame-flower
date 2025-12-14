@@ -212,10 +212,13 @@ export default function HomePage() {
         style={{ 
           flexShrink: 0,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden',
+          minHeight: '56px',
+          maxHeight: '56px',
         }}
       >
-        <h1 className="text-xl font-semibold text-white" translate="no">123 Sesame Street</h1>
+        <h1 className="text-xl font-semibold text-white truncate" translate="no">123 Sesame Street</h1>
         <button className="p-2 hover:bg-green-600 rounded-lg transition-colors">
           <MoreVertical size={20} className="text-white" />
         </button>

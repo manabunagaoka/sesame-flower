@@ -81,18 +81,9 @@ body {
   top: 0;
   left: 0;
   touch-action: manipulation;
-  -webkit-text-size-adjust: none;
-  -moz-text-size-adjust: none;
-  text-size-adjust: none;
-}
-
-/* Prevent any underlines on p and h tags (Chrome translation bug) */
-p, h1, h2, h3, h4, h5, h6, span {
-  text-decoration: none !important;
-  text-decoration-line: none !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-  -webkit-text-decoration: none !important;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -192,8 +183,7 @@ a {
   .wheel-container {
     width: 280px !important;
     height: 280px !important;
-    transform: scale(0.55);
+    transform: scale(0.5);
     transform-origin: center center;
-    margin: -60px 0;
   }
 }

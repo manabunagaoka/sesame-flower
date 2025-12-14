@@ -170,8 +170,8 @@ export const MENU_CONTENT: MenuContent = {
       icon: 'MonitorPlay',
       title: 'Plaza Sésamo',
       description: 'Sesame Street en Español',
-      youtubePlaylistId: 'PL1vMhg3AawgTYlcjJG9MTiMLNMHSAIxEQ',
-      thumbnail: 'https://img.youtube.com/vi/9gFT0bSLNEA/mqdefault.jpg',
+      youtubeVideoId: 'F6IIT9no7_I',
+      thumbnail: 'https://img.youtube.com/vi/F6IIT9no7_I/mqdefault.jpg',
     },
   ],
   learning: {

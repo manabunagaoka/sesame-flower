@@ -370,6 +370,77 @@ export default function HomePage() {
                     <p className="text-xs text-gray-600">{selectedContent.description}</p>
                   </div>
                 </>
+              ) : selectedContent.venue || selectedContent.time ? (
+                <>
+                  {/* Event detail card */}
+                  <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-6 overflow-auto">
+                    <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-6 space-y-4">
+                      {/* Event Icon */}
+                      <div className="flex justify-center">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                          <span className="text-4xl">🎉</span>
+                        </div>
+                      </div>
+                      
+                      {/* Event Title */}
+                      <h2 className="text-2xl font-bold text-gray-900 text-center">
+                        {selectedContent.title}
+                      </h2>
+                      
+                      {/* Event Details */}
+                      <div className="space-y-3 text-gray-600">
+                        {selectedContent.time && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-2xl">📅</span>
+                            <div>
+                              <p className="text-sm text-gray-500">Fecha y Hora</p>
+                              <p className="font-medium text-gray-900">{selectedContent.time}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {selectedContent.venue && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-2xl">📍</span>
+                            <div>
+                              <p className="text-sm text-gray-500">Lugar</p>
+                              <p className="font-medium text-gray-900">{selectedContent.venue}</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {selectedContent.description && (
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm text-gray-500 mb-1">Descripción</p>
+                            <p className="text-gray-700">{selectedContent.description}</p>
+                          </div>
+                        )}
+                        
+                        {selectedContent.isFree !== undefined && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-2xl">💰</span>
+                            <div>
+                              <p className="text-sm text-gray-500">Precio</p>
+                              <p className={`font-medium ${selectedContent.isFree ? 'text-green-600' : 'text-gray-900'}`}>
+                                {selectedContent.isFree ? '¡Gratis!' : 'Consultar precio'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Action Button */}
+                      {selectedContent.eventUrl && (
+                        <button
+                          onClick={() => window.open(selectedContent.eventUrl, '_blank', 'noopener,noreferrer')}
+                          className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+                        >
+                          Más Información →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <p>No video available</p>

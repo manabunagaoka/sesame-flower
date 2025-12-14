@@ -201,13 +201,8 @@ export default function SidePanel({
                         'cursor-pointer group'
                       )}
                       onClick={() => {
-                        if (item.eventUrl) {
-                          // Open external event URL in new tab
-                          window.open(item.eventUrl, '_blank', 'noopener,noreferrer');
-                        } else {
-                          onContentSelect(item);
-                          onClose();
-                        }
+                        onContentSelect(item);
+                        onClose();
                       }}
                     >
                       {/* Icon or Thumbnail */}

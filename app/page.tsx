@@ -249,16 +249,17 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 onClick={toggleWheelCollapsed}
-                className="md:hidden flex items-center justify-center gap-2 py-2 px-6 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
+                className="md:hidden flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
                 style={{ 
                   position: 'absolute',
                   bottom: 0,
                   left: '50%',
                   transform: 'translateX(-50%)',
+                  minHeight: '56px',
                 }}
               >
-                <ChevronUp size={20} />
-                <span className="text-sm font-medium">Show Menu</span>
+                <ChevronUp size={24} />
+                <span className="text-base font-medium">Show Menu</span>
               </motion.button>
             )}
           </AnimatePresence>

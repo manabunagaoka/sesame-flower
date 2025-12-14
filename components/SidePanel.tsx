@@ -127,15 +127,22 @@ export default function SidePanel({
 
             {/* Content */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              {/* Tabs for tabbed content */}
+              {/* Tabs for tabbed content - scrollable horizontally */}
               {hasTabs && !isChat && (
-                <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                <div 
+                  className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto"
+                  style={{ 
+                    scrollbarWidth: 'none', 
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
                   {(content as TabbedContent).tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setSelectedTab(tab.id)}
                       className={clsx(
-                        'flex-1 py-3 px-2 text-sm font-medium transition-colors duration-200',
+                        'py-3 px-4 text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0',
                         selectedTab === tab.id
                           ? 'text-green-600 border-b-2 border-green-600 bg-white'
                           : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -144,6 +151,17 @@ export default function SidePanel({
                       {tab.label}
                     </button>
                   ))}
+                  {/* Add/Subscribe more lessons tab */}
+                  <button
+                    onClick={() => {
+                      // TODO: Open subscription/add lessons modal
+                      alert('Subscribe to more lessons coming soon!');
+                    }}
+                    className="py-3 px-4 text-sm font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 text-green-500 hover:text-green-600 hover:bg-green-50 flex items-center gap-1"
+                  >
+                    <span className="text-lg leading-none">+</span>
+                    <span>More</span>
+                  </button>
                 </div>
               )}
               

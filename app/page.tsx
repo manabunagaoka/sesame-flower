@@ -26,12 +26,44 @@ export default function HomePage() {
   // Chat state lifted here for persistence across panel open/close
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
+  // Dynamic activities from API
+  const [dynamicActivities, setDynamicActivities] = useState<ContentItem[] | null>(null);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  
   // Touch handling for swipe gestures
   const touchStartY = useRef<number>(0);
   const touchStartX = useRef<number>(0);
 
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
+
+  // Fetch activities from Eventbrite API
+  const fetchActivities = async () => {
+    if (dynamicActivities !== null) return; // Already fetched
+    
+    setActivitiesLoading(true);
+    try {
+      const response = await fetch('/api/eventbrite?location=Cancun,Mexico');
+      const data = await response.json();
+      if (data.events && data.events.length > 0) {
+        setDynamicActivities(data.events);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  // Update side panel when dynamic activities load
+  useEffect(() => {
+    if (dynamicActivities && sidePanelContent.title === 'activities') {
+      setSidePanelContent({
+        title: 'activities',
+        content: dynamicActivities,
+      });
+    }
+  }, [dynamicActivities, sidePanelContent.title]);
 
   // Handle visibility changes to reset media permissions on iOS
   useEffect(() => {
@@ -90,6 +122,14 @@ export default function HomePage() {
     setWheelAngle(angle);
   };
 
+  // Get content for a menu - uses dynamic activities if available
+  const getMenuContent = (menuId: string) => {
+    if (menuId === 'activities' && dynamicActivities !== null) {
+      return dynamicActivities;
+    }
+    return MENU_CONTENT[menuId] || [];
+  };
+
   const handleWheelActivate = () => {
     // COMMENTED OUT: More submenu functionality
     // if (selectedMenu === 'more') {
@@ -98,8 +138,13 @@ export default function HomePage() {
     //   setWheelAngle(0); // Reset for submenu
     // } else 
     if (selectedMenu) {
+      // Fetch activities if this is the activities petal
+      if (selectedMenu === 'activities') {
+        fetchActivities();
+      }
+      
       // Open side panel with content
-      const content = MENU_CONTENT[selectedMenu] || [];
+      const content = getMenuContent(selectedMenu);
       setSidePanelContent({
         title: selectedMenu,
         content,
@@ -115,6 +160,11 @@ export default function HomePage() {
       setWheelAngle(clickedItem.angle);
       setSelectedMenu(menuId);
       
+      // Fetch activities if this is the activities petal
+      if (menuId === 'activities') {
+        fetchActivities();
+      }
+      
       // Handle menu action directly based on the clicked item
       // COMMENTED OUT: More submenu functionality
       // if (menuId === 'more') {
@@ -123,7 +173,7 @@ export default function HomePage() {
       //   setWheelAngle(0); // Reset for submenu
       // } else {
         // Open side panel with content
-        const content = MENU_CONTENT[menuId] || [];
+        const content = getMenuContent(menuId);
         setSidePanelContent({
           title: menuId,
           content,
@@ -226,7 +276,7 @@ export default function HomePage() {
         
         {/* Wheel Container - Bottom on mobile (collapsible), Left on tablet/desktop */}
         <motion.div 
-          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative"
+          className={`order-2 md:order-1 flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative ${wheelCollapsed ? 'bg-transparent' : 'bg-white'}`}
           style={{ 
             boxShadow: wheelCollapsed ? 'none' : '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
             borderTop: wheelCollapsed ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
@@ -249,9 +299,8 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 onClick={toggleWheelCollapsed}
-                className="md:hidden flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
+                className="md:hidden fixed flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors z-50"
                 style={{ 
-                  position: 'absolute',
                   bottom: 0,
                   left: '50%',
                   transform: 'translateX(-50%)',

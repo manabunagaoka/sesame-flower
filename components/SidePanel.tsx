@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { 
@@ -49,9 +49,14 @@ export default function SidePanel({
   const hasTabs = isTabbedContent(content);
   
   // For tabbed content, track selected tab
-  const [selectedTab, setSelectedTab] = useState<string>(
-    hasTabs ? content.tabs[0]?.id || '' : ''
-  );
+  const [selectedTab, setSelectedTab] = useState<string>('');
+  
+  // Reset to first tab when content changes
+  useEffect(() => {
+    if (hasTabs && content.tabs.length > 0) {
+      setSelectedTab(content.tabs[0].id);
+    }
+  }, [hasTabs, content]);
   
   // Get current items to display
   const displayItems: ContentItem[] = hasTabs

@@ -24,7 +24,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     icon: 'GraduationCap',
     color: '#a55eea',
     borderColor: '#8854d0',
-    angle: 90, // 3 o'clock
+    angle: 30, // 1 o'clock
   },
   {
     id: 'activities',

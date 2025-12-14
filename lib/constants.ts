@@ -11,20 +11,20 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 0, // 12 o'clock
   },
   {
-    id: 'connect',
-    title: 'Connect',
-    icon: 'Users',
-    color: '#3742fa',
-    borderColor: '#2c2c54',
-    angle: 45, // 1:30 position
-  },
-  {
     id: 'learning',
     title: 'Learning',
     icon: 'GraduationCap',
     color: '#a55eea',
     borderColor: '#8854d0',
-    angle: 30, // 1 o'clock
+    angle: 45, // 1:30 position
+  },
+  {
+    id: 'connect',
+    title: 'Connect',
+    icon: 'Users',
+    color: '#3742fa',
+    borderColor: '#2c2c54',
+    angle: 90, // 3 o'clock
   },
   {
     id: 'activities',

@@ -80,6 +80,9 @@ body {
   width: 100%;
   top: 0;
   left: 0;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -177,7 +180,7 @@ a {
 /* Mobile landscape: smaller wheel to fit */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-container {
-    width: min(40vh, 280px);
-    height: min(40vh, 280px);
+    width: min(35vh, 200px) !important;
+    height: min(35vh, 200px) !important;
   }
 }

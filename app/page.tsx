@@ -347,7 +347,14 @@ export default function HomePage() {
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: ANIMATION_DURATION }}
-                className="text-2xl text-gray-600 font-light text-center"
+                style={{
+                  fontSize: '24px',
+                  color: '#4b5563',
+                  fontWeight: 300,
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  borderBottom: 'none',
+                }}
               >
                 Hi. Let&apos;s play!
               </motion.p>

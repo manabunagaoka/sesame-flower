@@ -72,6 +72,7 @@ export default function ChatInterface({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null); // For consistent volume
   const conversationActive = useRef(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -380,10 +381,18 @@ export default function ChatInterface({
         const audioBuffer = await ctx.decodeAudioData(data.buffer.slice(0) as ArrayBuffer);
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
-        source.connect(ctx.destination);
+        
+        // Use GainNode for consistent volume across all audio
+        if (!gainNodeRef.current) {
+          gainNodeRef.current = ctx.createGain();
+          gainNodeRef.current.gain.value = 0.5; // Moderate volume (0.0 to 1.0)
+          gainNodeRef.current.connect(ctx.destination);
+        }
+        source.connect(gainNodeRef.current);
+        
         source.onended = cleanup;
         source.start(0);
-        console.log('Playing via Web Audio API');
+        console.log('Playing via Web Audio API with normalized volume');
         return;
       } catch (e) {
         console.log('Web Audio failed, falling back to HTML Audio:', e);
@@ -393,6 +402,7 @@ export default function ChatInterface({
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      audio.volume = 0.5; // Moderate volume for fallback
       audioRef.current = audio;
       
       audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
@@ -556,21 +566,26 @@ export default function ChatInterface({
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {chatMessages.map((msg, i) => (
               <div key={msg.id || i} style={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start' }}>
                 {msg.sender === 'user' ? (
-                  <div style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '16px', maxWidth: '85%' }}>
+                  <div style={{ background: '#3b82f6', color: 'white', padding: '12px 18px', borderRadius: '20px', maxWidth: '85%', fontSize: '17px', lineHeight: '1.5' }}>
                     {msg.text}
                   </div>
                 ) : (
-                  <div>
-                    <span style={{ fontWeight: 500, color: '#4b5563' }}>Flower: </span>
-                    <span style={{ color: '#1f2937' }}>
-                      {animatingMessageId === msg.timestamp ? (
-                        <TypewriterText text={msg.text} speed={35} onComplete={() => setAnimatingMessageId(null)} onUpdate={scrollToBottom} />
-                      ) : msg.text}
-                    </span>
+                  <div style={{ 
+                    background: '#f3f4f6', 
+                    color: '#1f2937', 
+                    padding: '12px 18px', 
+                    borderRadius: '20px', 
+                    maxWidth: '85%', 
+                    fontSize: '17px', 
+                    lineHeight: '1.5' 
+                  }}>
+                    {animatingMessageId === msg.timestamp ? (
+                      <TypewriterText text={msg.text} speed={35} onComplete={() => setAnimatingMessageId(null)} onUpdate={scrollToBottom} />
+                    ) : msg.text}
                   </div>
                 )}
               </div>

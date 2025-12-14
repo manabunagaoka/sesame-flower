@@ -192,6 +192,7 @@ a {
     height: 280px !important;
     transform: scale(0.45);
     transform-origin: center center;
-    margin: auto;
+    margin-top: -70px;
+    margin-bottom: -70px;
   }
 }

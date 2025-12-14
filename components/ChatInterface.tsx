@@ -385,7 +385,7 @@ export default function ChatInterface({
         // Use GainNode for consistent volume across all audio
         if (!gainNodeRef.current) {
           gainNodeRef.current = ctx.createGain();
-          gainNodeRef.current.gain.value = 0.5; // Moderate volume (0.0 to 1.0)
+          gainNodeRef.current.gain.value = 0.3; // Lower volume for mobile (0.0 to 1.0)
           gainNodeRef.current.connect(ctx.destination);
         }
         source.connect(gainNodeRef.current);
@@ -402,7 +402,7 @@ export default function ChatInterface({
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.volume = 0.5; // Moderate volume for fallback
+      audio.volume = 0.3; // Lower volume for mobile fallback
       audioRef.current = audio;
       
       audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
@@ -575,7 +575,7 @@ export default function ChatInterface({
                   </div>
                 ) : (
                   <div style={{ 
-                    background: '#f3f4f6', 
+                    background: '#fce7f3', 
                     color: '#1f2937', 
                     padding: '12px 18px', 
                     borderRadius: '20px', 

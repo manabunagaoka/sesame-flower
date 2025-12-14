@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, ChevronUp } from 'lucide-react';
+import { MoreVertical, ChevronUp, MapPin } from 'lucide-react';
 import MenuWheel from '@/components/MenuWheel';
 import TrackWheel from '@/components/TrackWheel';
 import SidePanel from '@/components/SidePanel';
@@ -26,44 +26,12 @@ export default function HomePage() {
   // Chat state lifted here for persistence across panel open/close
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
-  // Dynamic calendar events from API
-  const [dynamicCalendar, setDynamicCalendar] = useState<ContentItem[] | null>(null);
-  const [calendarLoading, setCalendarLoading] = useState(false);
-  
   // Touch handling for swipe gestures
   const touchStartY = useRef<number>(0);
   const touchStartX = useRef<number>(0);
 
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
-
-  // Fetch calendar events from combined API (custom + holidays)
-  const fetchCalendar = async (forceRefresh = false) => {
-    if (dynamicCalendar !== null && !forceRefresh) return; // Already fetched
-    
-    setCalendarLoading(true);
-    try {
-      const response = await fetch('/api/calendar');
-      const data = await response.json();
-      if (data.events && data.events.length > 0) {
-        setDynamicCalendar(data.events);
-      }
-    } catch (error) {
-      console.error('Failed to fetch calendar:', error);
-    } finally {
-      setCalendarLoading(false);
-    }
-  };
-
-  // Update side panel when dynamic calendar loads
-  useEffect(() => {
-    if (dynamicCalendar && sidePanelContent.title === 'calendar') {
-      setSidePanelContent({
-        title: 'calendar',
-        content: dynamicCalendar,
-      });
-    }
-  }, [dynamicCalendar, sidePanelContent.title]);
 
   // Handle visibility changes to reset media permissions on iOS
   useEffect(() => {
@@ -122,11 +90,8 @@ export default function HomePage() {
     setWheelAngle(angle);
   };
 
-  // Get content for a menu - uses dynamic calendar if available
+  // Get content for a menu
   const getMenuContent = (menuId: string) => {
-    if (menuId === 'calendar' && dynamicCalendar !== null) {
-      return dynamicCalendar;
-    }
     return MENU_CONTENT[menuId] || [];
   };
 
@@ -138,11 +103,6 @@ export default function HomePage() {
     //   setWheelAngle(0); // Reset for submenu
     // } else 
     if (selectedMenu) {
-      // Fetch calendar if this is the calendar petal
-      if (selectedMenu === 'calendar') {
-        fetchCalendar();
-      }
-      
       // Open side panel with content
       const content = getMenuContent(selectedMenu);
       setSidePanelContent({
@@ -159,11 +119,6 @@ export default function HomePage() {
     if (clickedItem) {
       setWheelAngle(clickedItem.angle);
       setSelectedMenu(menuId);
-      
-      // Fetch calendar if this is the calendar petal
-      if (menuId === 'calendar') {
-        fetchCalendar();
-      }
       
       // Handle menu action directly based on the clicked item
       // COMMENTED OUT: More submenu functionality
@@ -555,7 +510,7 @@ export default function HomePage() {
                         
                         {selectedContent.venue && (
                           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">📍</span>
+                            <MapPin size={24} className="text-gray-600" />
                             <div>
                               <p className="text-sm text-gray-500">Lugar</p>
                               <p className="font-medium text-gray-900">{selectedContent.venue}</p>

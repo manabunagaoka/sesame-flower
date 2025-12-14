@@ -8,7 +8,7 @@ import {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay, Gamepad2, Award
+  MonitorPlay, Gamepad2, Award, MapPin, Flag, Calendar
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ContentItem, TabbedContent, isTabbedContent } from '@/lib/types';
@@ -21,7 +21,7 @@ const contentIconMap = {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay, Gamepad2, Award
+  MonitorPlay, Gamepad2, Award, MapPin, Flag, Calendar
 };
 
 interface SidePanelProps {
@@ -119,21 +119,6 @@ export default function SidePanel({
                 <h2 className="text-xl font-semibold text-gray-800 capitalize">
                   {isChat ? 'Speak with Flower' : title}
                 </h2>
-                {title === 'calendar' && (
-                  <button
-                    onClick={() => {
-                      // Open add event modal
-                      const event = prompt('Enter event details (title):');
-                      if (event) {
-                        alert('Event creation coming soon! For now, events are managed via API.');
-                      }
-                    }}
-                    className="ml-2 px-2 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center gap-1"
-                  >
-                    <Plus size={12} />
-                    Add
-                  </button>
-                )}
               </div>
               <button
                 onClick={onClose}
@@ -254,7 +239,7 @@ export default function SidePanel({
                           {/* School badge for custom events */}
                           {item.isCustom && (
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-[8px]">🏫</span>
+                              <GraduationCap size={10} className="text-white" />
                             </span>
                           )}
                         </div>
@@ -283,8 +268,8 @@ export default function SidePanel({
                           {item.description}
                         </p>
                         {item.venue && (
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">
-                            📍 {item.venue} {item.isFree && <span className="text-green-600 ml-1">• Gratis</span>}
+                          <p className="text-xs text-gray-400 mt-0.5 truncate flex items-center gap-1">
+                            <MapPin size={10} /> {item.venue}
                           </p>
                         )}
                       </div>
@@ -324,6 +309,21 @@ export default function SidePanel({
                     </motion.div>
                   );
                 })
+                )}
+                
+                {/* Add Event button at bottom of Calendar tabs */}
+                {title === 'calendar' && hasTabs && (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center gap-2 p-4 bg-green-50 hover:bg-green-100 text-green-600 border-t border-green-100 transition-colors"
+                    onClick={() => {
+                      alert('Event creation coming soon!');
+                    }}
+                  >
+                    <Plus size={20} />
+                    <span className="font-medium">Add Event</span>
+                  </motion.button>
                 )}
               </div>
               )}

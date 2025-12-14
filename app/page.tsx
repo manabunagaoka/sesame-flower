@@ -229,7 +229,7 @@ export default function HomePage() {
         
         {/* Wheel Container - Bottom on mobile (collapsible), Left on tablet/desktop */}
         <motion.div 
-          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative"
+          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative wheel-section"
           style={{ 
             boxShadow: wheelCollapsed ? 'none' : '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
             borderTop: wheelCollapsed ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',

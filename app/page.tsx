@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, ChevronUp } from 'lucide-react';
 import MenuWheel from '@/components/MenuWheel';
 import TrackWheel from '@/components/TrackWheel';
 import SidePanel from '@/components/SidePanel';
@@ -21,9 +21,14 @@ export default function HomePage() {
   const [wheelAngle, setWheelAngle] = useState<number>(0);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [videoKey, setVideoKey] = useState<number>(0); // Force iframe reload when needed
+  const [wheelCollapsed, setWheelCollapsed] = useState(false); // Collapsible wheel state
   
   // Chat state lifted here for persistence across panel open/close
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  
+  // Touch handling for swipe gestures
+  const touchStartY = useRef<number>(0);
+  const touchStartX = useRef<number>(0);
 
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
@@ -159,6 +164,34 @@ export default function HomePage() {
     }
   };
 
+  // Swipe handlers for collapsible wheel
+  const handleWheelTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleWheelTouchEnd = (e: React.TouchEvent) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
+    const deltaY = touchEndY - touchStartY.current;
+    const deltaX = Math.abs(touchEndX - touchStartX.current);
+    
+    // Only trigger if vertical swipe is dominant (not horizontal scrolling)
+    if (Math.abs(deltaY) > 50 && Math.abs(deltaY) > deltaX) {
+      if (deltaY > 0 && !wheelCollapsed) {
+        // Swipe down - collapse wheel
+        setWheelCollapsed(true);
+      } else if (deltaY < 0 && wheelCollapsed) {
+        // Swipe up - expand wheel
+        setWheelCollapsed(false);
+      }
+    }
+  };
+
+  const toggleWheelCollapsed = () => {
+    setWheelCollapsed(!wheelCollapsed);
+  };
+
   return (
     <div 
       className="flex flex-col bg-gray-50"
@@ -191,61 +224,112 @@ export default function HomePage() {
       {/* Main Layout - Responsive: vertical on mobile, horizontal on tablet/desktop */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{ minHeight: 0 }}>
         
-        {/* Wheel Container - Bottom on mobile, Left on tablet/desktop */}
-        <div 
-          className="order-2 md:order-1 bg-white flex items-center justify-center p-4 md:border-r md:border-t-0 md:shadow-none" 
+        {/* Wheel Container - Bottom on mobile (collapsible), Left on tablet/desktop */}
+        <motion.div 
+          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative"
           style={{ 
-            boxShadow: '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
-            borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+            boxShadow: wheelCollapsed ? 'none' : '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
+            borderTop: wheelCollapsed ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
           }}
+          initial={false}
+          animate={{ 
+            height: wheelCollapsed ? 'auto' : 'auto',
+            paddingTop: wheelCollapsed ? 0 : 16,
+            paddingBottom: wheelCollapsed ? 0 : 16,
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          onTouchStart={handleWheelTouchStart}
+          onTouchEnd={handleWheelTouchEnd}
         >
-          {/* Wheel size: responsive to viewport but capped */}
-          <div 
-            className="relative flex items-center justify-center wheel-container"
-          >
-            {/* Menu Wheel */}
-            <AnimatePresence mode="wait">
-              {isMenuOpen && (
-                <motion.div
-                  key="menu-wheel"
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20,
-                    duration: ANIMATION_DURATION / 1000,
-                  }}
-                >
-                  <MenuWheel
-                    menuState={menuState}
-                    selectedMenu={selectedMenu}
-                    onMenuClick={handleMenuClick}
-                    isOpen={isMenuOpen}
-                    currentAngle={wheelAngle}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* Pull-up handle when collapsed (mobile only) */}
+          <AnimatePresence>
+            {wheelCollapsed && (
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                onClick={toggleWheelCollapsed}
+                className="md:hidden flex items-center justify-center gap-2 py-2 px-6 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
+                style={{ 
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                }}
+              >
+                <ChevronUp size={20} />
+                <span className="text-sm font-medium">Show Menu</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-            {/* iPod Track Wheel */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <TrackWheel
-                isMenuOpen={isMenuOpen}
-                onToggle={handleMenuToggle}
-                onRotate={handleWheelRotate}
-                currentAngle={wheelAngle}
-                menuState={menuState}
-                onActivate={handleWheelActivate}
-                onBack={handleBack}
-                selectedMenu={selectedMenu}
-                menuItems={currentMenuItems}
-              />
+          {/* Wheel content - hidden when collapsed on mobile */}
+          <motion.div
+            initial={false}
+            animate={{ 
+              opacity: wheelCollapsed ? 0 : 1,
+              scale: wheelCollapsed ? 0.8 : 1,
+              height: wheelCollapsed ? 0 : 'auto',
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="md:!opacity-100 md:!scale-100 md:!h-auto p-4"
+            style={{ overflow: 'hidden' }}
+          >
+            {/* Swipe hint indicator (mobile only, when expanded) */}
+            {!wheelCollapsed && selectedContent && (
+              <div className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 z-10">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              </div>
+            )}
+            
+            {/* Wheel size: responsive to viewport but capped */}
+            <div 
+              className="relative flex items-center justify-center wheel-container"
+            >
+              {/* Menu Wheel */}
+              <AnimatePresence mode="wait">
+                {isMenuOpen && (
+                  <motion.div
+                    key="menu-wheel"
+                    className="absolute inset-0 flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                      duration: ANIMATION_DURATION / 1000,
+                    }}
+                  >
+                    <MenuWheel
+                      menuState={menuState}
+                      selectedMenu={selectedMenu}
+                      onMenuClick={handleMenuClick}
+                      isOpen={isMenuOpen}
+                      currentAngle={wheelAngle}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* iPod Track Wheel */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <TrackWheel
+                  isMenuOpen={isMenuOpen}
+                  onToggle={handleMenuToggle}
+                  onRotate={handleWheelRotate}
+                  currentAngle={wheelAngle}
+                  menuState={menuState}
+                  onActivate={handleWheelActivate}
+                  onBack={handleBack}
+                  selectedMenu={selectedMenu}
+                  menuItems={currentMenuItems}
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Content Window - Top on mobile, Right on tablet/desktop */}
         <div 

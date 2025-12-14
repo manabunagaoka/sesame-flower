@@ -8,7 +8,7 @@ import {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay
+  MonitorPlay, Gamepad2
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ContentItem, TabbedContent, isTabbedContent } from '@/lib/types';
@@ -21,7 +21,7 @@ const contentIconMap = {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay
+  MonitorPlay, Gamepad2
 };
 
 interface SidePanelProps {
@@ -206,7 +206,7 @@ export default function SidePanel({
                       }}
                     >
                       {/* Icon or Thumbnail */}
-                      {item.thumbnail && (item.videoId || item.youtubePlaylistId || item.youtubeVideoId) ? (
+                      {item.thumbnail && (item.videoId || item.youtubePlaylistId || item.youtubeVideoId || item.gameUrl) ? (
                         <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
                           <img 
                             src={item.thumbnail} 

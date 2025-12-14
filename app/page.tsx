@@ -350,6 +350,26 @@ export default function HomePage() {
                     <p className="text-xs text-gray-600">{selectedContent.description}</p>
                   </div>
                 </>
+              ) : selectedContent.gameUrl ? (
+                <>
+                  {/* Game container - full height for interactive games */}
+                  <div className="flex-1 flex items-center justify-center bg-white overflow-hidden">
+                    <iframe
+                      key={`game-${selectedContent.gameUrl}-${videoKey}`}
+                      src={selectedContent.gameUrl}
+                      title={selectedContent.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      className="w-full h-full"
+                      style={{ border: 'none' }}
+                    />
+                  </div>
+                  {/* Title section below game */}
+                  <div className="flex-shrink-0 bg-white px-4 py-2 border-t border-gray-200">
+                    <h2 className="text-sm font-semibold text-gray-900">{selectedContent.title}</h2>
+                    <p className="text-xs text-gray-600">{selectedContent.description}</p>
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <p>No video available</p>

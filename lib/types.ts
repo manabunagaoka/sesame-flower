@@ -17,6 +17,7 @@ export interface ContentItem {
   thumbnail?: string;
   youtubePlaylistId?: string;  // For YouTube playlist embeds
   youtubeVideoId?: string;     // For individual YouTube videos
+  gameUrl?: string;            // For external game embeds (Sesame Street, etc.)
 }
 
 // For menus with tabs/categories (like Learning)

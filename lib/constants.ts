@@ -27,11 +27,11 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 90, // 3 o'clock
   },
   {
-    id: 'activities',
-    title: 'Activities',
-    icon: 'Calendar',
-    color: '#26de81',
-    borderColor: '#20bf6b',
+    id: 'games',
+    title: 'Games',
+    icon: 'Gamepad2',
+    color: '#45b7d1',
+    borderColor: '#0984e3',
     angle: 135, // 4:30 position
   },
   {
@@ -51,11 +51,11 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 225, // 7:30 position
   },
   {
-    id: 'games',
-    title: 'Games',
-    icon: 'Gamepad2',
-    color: '#45b7d1',
-    borderColor: '#0984e3',
+    id: 'activities',
+    title: 'Activities',
+    icon: 'Calendar',
+    color: '#26de81',
+    borderColor: '#20bf6b',
     angle: 270, // 9 o'clock
   },
   {
@@ -321,24 +321,16 @@ export const MENU_CONTENT: MenuContent = {
   ],
   games: [
     {
+      icon: 'Gamepad2',
+      title: 'Elmo\'s World Games',
+      description: 'Play fun games with Elmo',
+      gameUrl: 'https://www.sesamestreet.org/games?id=28013',
+      thumbnail: 'https://cms-tc.pbskids.org/sesame/Elmos_World_Games_MainImage.jpg',
+    },
+    {
       icon: 'PlayCircle',
-      title: 'Mecha Builders',
-      description: 'Build and create',
-    },
-    {
-      icon: 'Grid3x3',
-      title: 'Matching',
-      description: 'Match pairs',
-    },
-    {
-      icon: 'Zap',
-      title: 'Memory',
-      description: 'Test your memory',
-    },
-    {
-      icon: 'Plus',
-      title: 'Coming Soon',
-      description: 'More games on the way',
+      title: 'More Games Coming',
+      description: 'Add more games here',
     },
   ],
   market: [

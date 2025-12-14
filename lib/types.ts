@@ -22,6 +22,7 @@ export interface ContentItem {
   venue?: string;              // Event venue name
   isFree?: boolean;            // Whether event is free
   isCustom?: boolean;          // Whether this is a custom/school event
+  isHoliday?: boolean;         // Whether this is a public holiday
   date?: string;               // ISO date for sorting
 }
 

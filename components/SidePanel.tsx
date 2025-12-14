@@ -119,7 +119,7 @@ export default function SidePanel({
                 <h2 className="text-xl font-semibold text-gray-800 capitalize">
                   {isChat ? 'Speak with Flower' : title}
                 </h2>
-                {title === 'activities' && (
+                {title === 'calendar' && (
                   <button
                     onClick={() => {
                       // Open add event modal

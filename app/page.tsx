@@ -26,9 +26,9 @@ export default function HomePage() {
   // Chat state lifted here for persistence across panel open/close
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
-  // Dynamic activities from API
-  const [dynamicActivities, setDynamicActivities] = useState<ContentItem[] | null>(null);
-  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  // Dynamic calendar events from API
+  const [dynamicCalendar, setDynamicCalendar] = useState<ContentItem[] | null>(null);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   
   // Touch handling for swipe gestures
   const touchStartY = useRef<number>(0);
@@ -37,33 +37,33 @@ export default function HomePage() {
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
 
-  // Fetch activities from combined API (custom + external events)
-  const fetchActivities = async (forceRefresh = false) => {
-    if (dynamicActivities !== null && !forceRefresh) return; // Already fetched
+  // Fetch calendar events from combined API (custom + holidays)
+  const fetchCalendar = async (forceRefresh = false) => {
+    if (dynamicCalendar !== null && !forceRefresh) return; // Already fetched
     
-    setActivitiesLoading(true);
+    setCalendarLoading(true);
     try {
-      const response = await fetch('/api/activities?location=Cancun,Mexico');
+      const response = await fetch('/api/calendar');
       const data = await response.json();
       if (data.events && data.events.length > 0) {
-        setDynamicActivities(data.events);
+        setDynamicCalendar(data.events);
       }
     } catch (error) {
-      console.error('Failed to fetch activities:', error);
+      console.error('Failed to fetch calendar:', error);
     } finally {
-      setActivitiesLoading(false);
+      setCalendarLoading(false);
     }
   };
 
-  // Update side panel when dynamic activities load
+  // Update side panel when dynamic calendar loads
   useEffect(() => {
-    if (dynamicActivities && sidePanelContent.title === 'activities') {
+    if (dynamicCalendar && sidePanelContent.title === 'calendar') {
       setSidePanelContent({
-        title: 'activities',
-        content: dynamicActivities,
+        title: 'calendar',
+        content: dynamicCalendar,
       });
     }
-  }, [dynamicActivities, sidePanelContent.title]);
+  }, [dynamicCalendar, sidePanelContent.title]);
 
   // Handle visibility changes to reset media permissions on iOS
   useEffect(() => {
@@ -122,10 +122,10 @@ export default function HomePage() {
     setWheelAngle(angle);
   };
 
-  // Get content for a menu - uses dynamic activities if available
+  // Get content for a menu - uses dynamic calendar if available
   const getMenuContent = (menuId: string) => {
-    if (menuId === 'activities' && dynamicActivities !== null) {
-      return dynamicActivities;
+    if (menuId === 'calendar' && dynamicCalendar !== null) {
+      return dynamicCalendar;
     }
     return MENU_CONTENT[menuId] || [];
   };
@@ -138,9 +138,9 @@ export default function HomePage() {
     //   setWheelAngle(0); // Reset for submenu
     // } else 
     if (selectedMenu) {
-      // Fetch activities if this is the activities petal
-      if (selectedMenu === 'activities') {
-        fetchActivities();
+      // Fetch calendar if this is the calendar petal
+      if (selectedMenu === 'calendar') {
+        fetchCalendar();
       }
       
       // Open side panel with content
@@ -160,9 +160,9 @@ export default function HomePage() {
       setWheelAngle(clickedItem.angle);
       setSelectedMenu(menuId);
       
-      // Fetch activities if this is the activities petal
-      if (menuId === 'activities') {
-        fetchActivities();
+      // Fetch calendar if this is the calendar petal
+      if (menuId === 'calendar') {
+        fetchCalendar();
       }
       
       // Handle menu action directly based on the clicked item

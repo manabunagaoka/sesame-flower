@@ -249,14 +249,14 @@ export default function HomePage() {
 
         {/* Content Window - Top on mobile, Right on tablet/desktop */}
         <div 
-          className="order-1 md:order-2 flex-1 bg-white overflow-y-auto p-4" 
+          className="order-1 md:order-2 flex-1 bg-white overflow-hidden" 
           style={{ 
             minHeight: 0,
             boxShadow: 'inset 0 1px 0 rgba(0, 0, 0, 0.06)'
           }}
         >
           {!selectedContent ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4">
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
               <img src="/gif/elmo.gif" alt="Elmo" className="w-32 h-32 object-cover rounded-full" />
               <motion.p 
                 initial={{ opacity: 1 }}
@@ -271,18 +271,23 @@ export default function HomePage() {
             <div className="h-full flex flex-col bg-white">
               {selectedContent.videoId ? (
                 <>
-                  {/* Wistia Video container - responsive with 16:9 aspect ratio */}
-                  <div className="flex-1 flex items-center justify-center bg-white overflow-hidden">
-                    <div className="relative w-full" style={{ paddingTop: '56.25%', maxHeight: '100%' }}>
-                      <iframe
-                        key={`video-${selectedContent.videoId}-${videoKey}`}
-                        src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?playsinline=1&controlsVisibleOnLoad=true&playerColor=54bb6a&plugin%5BpostRoll-v1%5D%5Btext%5D=&volume=1`}
-                        title={selectedContent.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        className="absolute top-0 left-0 w-full h-full"
-                        style={{ border: 'none' }}
-                      />
+                  {/* Wistia Video container - responsive 16:9 that fits container */}
+                  <div className="flex-1 flex items-center justify-center bg-white overflow-hidden p-2">
+                    <div 
+                      className="relative w-full h-full"
+                      style={{ maxWidth: 'calc((100vh - 120px) * 16 / 9)', maxHeight: 'calc(100vw * 9 / 16)' }}
+                    >
+                      <div className="absolute inset-0" style={{ aspectRatio: '16/9', margin: 'auto', maxWidth: '100%', maxHeight: '100%' }}>
+                        <iframe
+                          key={`video-${selectedContent.videoId}-${videoKey}`}
+                          src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?playsinline=1&controlsVisibleOnLoad=true&playerColor=54bb6a&plugin%5BpostRoll-v1%5D%5Btext%5D=&volume=1`}
+                          title={selectedContent.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                          className="w-full h-full"
+                          style={{ border: 'none' }}
+                        />
+                      </div>
                     </div>
                   </div>
                   {/* Title section below video */}
@@ -293,18 +298,23 @@ export default function HomePage() {
                 </>
               ) : selectedContent.youtubePlaylistId ? (
                 <>
-                  {/* YouTube Playlist container - responsive with 16:9 aspect ratio */}
-                  <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
-                    <div className="relative w-full" style={{ paddingTop: '56.25%', maxHeight: '100%' }}>
-                      <iframe
-                        key={`youtube-playlist-${selectedContent.youtubePlaylistId}-${videoKey}`}
-                        src={`https://www.youtube.com/embed/videoseries?list=${selectedContent.youtubePlaylistId}&playsinline=1`}
-                        title={selectedContent.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        className="absolute top-0 left-0 w-full h-full"
-                        style={{ border: 'none' }}
-                      />
+                  {/* YouTube Playlist container - responsive 16:9 that fits container */}
+                  <div className="flex-1 flex items-center justify-center bg-white overflow-hidden p-2">
+                    <div 
+                      className="relative w-full h-full"
+                      style={{ maxWidth: 'calc((100vh - 120px) * 16 / 9)', maxHeight: 'calc(100vw * 9 / 16)' }}
+                    >
+                      <div className="absolute inset-0" style={{ aspectRatio: '16/9', margin: 'auto', maxWidth: '100%', maxHeight: '100%' }}>
+                        <iframe
+                          key={`youtube-playlist-${selectedContent.youtubePlaylistId}-${videoKey}`}
+                          src={`https://www.youtube.com/embed/videoseries?list=${selectedContent.youtubePlaylistId}&playsinline=1`}
+                          title={selectedContent.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                          className="w-full h-full"
+                          style={{ border: 'none' }}
+                        />
+                      </div>
                     </div>
                   </div>
                   {/* Title section below video */}
@@ -315,18 +325,23 @@ export default function HomePage() {
                 </>
               ) : selectedContent.youtubeVideoId ? (
                 <>
-                  {/* YouTube Single Video container - responsive with 16:9 aspect ratio */}
-                  <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
-                    <div className="relative w-full" style={{ paddingTop: '56.25%', maxHeight: '100%' }}>
-                      <iframe
-                        key={`youtube-video-${selectedContent.youtubeVideoId}-${videoKey}`}
-                        src={`https://www.youtube.com/embed/${selectedContent.youtubeVideoId}?playsinline=1`}
-                        title={selectedContent.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        className="absolute top-0 left-0 w-full h-full"
-                        style={{ border: 'none' }}
-                      />
+                  {/* YouTube Single Video container - responsive 16:9 that fits container */}
+                  <div className="flex-1 flex items-center justify-center bg-white overflow-hidden p-2">
+                    <div 
+                      className="relative w-full h-full"
+                      style={{ maxWidth: 'calc((100vh - 120px) * 16 / 9)', maxHeight: 'calc(100vw * 9 / 16)' }}
+                    >
+                      <div className="absolute inset-0" style={{ aspectRatio: '16/9', margin: 'auto', maxWidth: '100%', maxHeight: '100%' }}>
+                        <iframe
+                          key={`youtube-video-${selectedContent.youtubeVideoId}-${videoKey}`}
+                          src={`https://www.youtube.com/embed/${selectedContent.youtubeVideoId}?playsinline=1`}
+                          title={selectedContent.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          allowFullScreen
+                          className="w-full h-full"
+                          style={{ border: 'none' }}
+                        />
+                      </div>
                     </div>
                   </div>
                   {/* Title section below video */}

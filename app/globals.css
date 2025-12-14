@@ -85,12 +85,6 @@ body {
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-}
-
-/* Disable Chrome contextual menu/search underlines */
-* {
-  -webkit-user-modify: read-only;
 }
 
 body {
@@ -185,19 +179,18 @@ a {
   }
 }
 
-/* Mobile landscape: give wheel section proper width */
+/* Mobile landscape: give wheel section proper dimensions and allow scroll */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-section {
     min-width: 45vw !important;
     max-width: 45vw !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    overflow: auto !important;
+    padding: 10px !important;
   }
   
   .wheel-container {
-    width: 220px !important;
-    height: 220px !important;
-    transform: none !important;
+    width: 280px !important;
+    height: 280px !important;
+    flex-shrink: 0 !important;
   }
 }

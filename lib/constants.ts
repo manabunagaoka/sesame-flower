@@ -19,11 +19,11 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 45, // 1:30 position
   },
   {
-    id: 'connect',
-    title: 'Connect',
-    icon: 'Users',
-    color: '#3742fa',
-    borderColor: '#2c2c54',
+    id: 'videos',
+    title: 'Videos',
+    icon: 'MonitorPlay',
+    color: '#e74c3c',
+    borderColor: '#c0392b',
     angle: 90, // 3 o'clock
   },
   {
@@ -151,26 +151,12 @@ export const MENU_CONTENT: MenuContent = {
       description: '24/7 medical advice',
     },
   ],
-  connect: [
+  videos: [
     {
-      icon: 'Users',
-      title: 'Neighbors',
-      description: '12 online',
-    },
-    {
-      icon: 'Users2',
-      title: 'Groups',
-      description: 'Join community groups',
-    },
-    {
-      icon: 'Baby',
-      title: 'Playdates',
-      description: 'Schedule playdates',
-    },
-    {
-      icon: 'Coffee',
-      title: 'Meetups',
-      description: 'Local parent meetups',
+      icon: 'MonitorPlay',
+      title: 'Sesame Street Videos',
+      description: 'Watch the latest videos',
+      youtubePlaylistId: 'PL8TioFHubWFsnPhBmrDQ8dtoXxghDMKxr',
     },
   ],
   learning: {

@@ -15,6 +15,8 @@ export interface ContentItem {
   time?: string;
   videoId?: string;
   thumbnail?: string;
+  youtubePlaylistId?: string;  // For YouTube playlist embeds
+  youtubeVideoId?: string;     // For individual YouTube videos
 }
 
 // For menus with tabs/categories (like Learning)

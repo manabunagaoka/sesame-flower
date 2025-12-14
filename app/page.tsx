@@ -271,12 +271,34 @@ export default function HomePage() {
             <div className="h-full flex flex-col bg-white">
               {selectedContent.videoId ? (
                 <>
-                  {/* Video container - responsive with 16:9 aspect ratio */}
+                  {/* Wistia Video container - responsive with 16:9 aspect ratio */}
                   <div className="flex-1 flex items-center justify-center bg-white overflow-hidden">
                     <div className="relative w-full" style={{ paddingTop: '56.25%', maxHeight: '100%' }}>
                       <iframe
                         key={`video-${selectedContent.videoId}-${videoKey}`}
                         src={`https://fast.wistia.net/embed/iframe/${selectedContent.videoId}?playsinline=1&controlsVisibleOnLoad=true&playerColor=54bb6a&plugin%5BpostRoll-v1%5D%5Btext%5D=&volume=1`}
+                        title={selectedContent.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        className="absolute top-0 left-0 w-full h-full"
+                        style={{ border: 'none' }}
+                      />
+                    </div>
+                  </div>
+                  {/* Title section below video */}
+                  <div className="flex-shrink-0 bg-white px-4 py-2 border-t border-gray-200">
+                    <h2 className="text-sm font-semibold text-gray-900">{selectedContent.title}</h2>
+                    <p className="text-xs text-gray-600">{selectedContent.description}</p>
+                  </div>
+                </>
+              ) : selectedContent.youtubePlaylistId ? (
+                <>
+                  {/* YouTube Playlist container - responsive with 16:9 aspect ratio */}
+                  <div className="flex-1 flex items-center justify-center bg-black overflow-hidden">
+                    <div className="relative w-full" style={{ paddingTop: '56.25%', maxHeight: '100%' }}>
+                      <iframe
+                        key={`youtube-playlist-${selectedContent.youtubePlaylistId}-${videoKey}`}
+                        src={`https://www.youtube.com/embed/videoseries?list=${selectedContent.youtubePlaylistId}&playsinline=1`}
                         title={selectedContent.title}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                         allowFullScreen

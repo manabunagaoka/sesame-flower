@@ -7,7 +7,8 @@ import {
   Phone, Heart, AlertTriangle, Stethoscope, Users, Users2, Baby, Coffee,
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
-  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart
+  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
+  MonitorPlay
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ContentItem, TabbedContent, isTabbedContent } from '@/lib/types';
@@ -19,7 +20,8 @@ const contentIconMap = {
   Phone, Heart, AlertTriangle, Stethoscope, Users, Users2, Baby, Coffee,
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
-  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart
+  Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
+  MonitorPlay
 };
 
 interface SidePanelProps {

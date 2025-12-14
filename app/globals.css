@@ -84,6 +84,13 @@ body {
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Disable Chrome contextual menu/search underlines */
+* {
+  -webkit-user-modify: read-only;
 }
 
 body {
@@ -183,7 +190,8 @@ a {
   .wheel-container {
     width: 280px !important;
     height: 280px !important;
-    transform: scale(0.5);
+    transform: scale(0.45);
     transform-origin: center center;
+    margin: auto;
   }
 }

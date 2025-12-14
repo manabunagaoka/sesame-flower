@@ -177,7 +177,9 @@ a {
 /* Mobile landscape: scale wheel to fit viewport height */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-container {
-    width: min(50vh, 220px);
-    height: min(50vh, 220px);
+    width: 280px;
+    height: 280px;
+    transform: scale(0.55);
+    transform-origin: center center;
   }
 }

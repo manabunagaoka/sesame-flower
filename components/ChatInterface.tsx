@@ -385,9 +385,10 @@ export default function ChatInterface({
         // Use GainNode for consistent volume across all audio
         if (!gainNodeRef.current) {
           gainNodeRef.current = ctx.createGain();
-          gainNodeRef.current.gain.value = 0.3; // Lower volume for mobile (0.0 to 1.0)
           gainNodeRef.current.connect(ctx.destination);
         }
+        // Always set gain value before playing to ensure consistent volume
+        gainNodeRef.current.gain.value = 0.3;
         source.connect(gainNodeRef.current);
         
         source.onended = cleanup;

@@ -212,13 +212,10 @@ export default function HomePage() {
         style={{ 
           flexShrink: 0,
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-          overflow: 'hidden',
-          minHeight: '56px',
-          maxHeight: '56px',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
         }}
       >
-        <h1 className="text-xl font-semibold text-white truncate" translate="no">123 Sesame Street</h1>
+        <h1 className="text-xl font-semibold text-white">123 Sesame Street</h1>
         <button className="p-2 hover:bg-green-600 rounded-lg transition-colors">
           <MoreVertical size={20} className="text-white" />
         </button>
@@ -229,7 +226,7 @@ export default function HomePage() {
         
         {/* Wheel Container - Bottom on mobile (collapsible), Left on tablet/desktop */}
         <motion.div 
-          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative wheel-section"
+          className="order-2 md:order-1 bg-white flex flex-col items-center justify-center md:border-r md:border-t-0 md:shadow-none relative"
           style={{ 
             boxShadow: wheelCollapsed ? 'none' : '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
             borderTop: wheelCollapsed ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
@@ -252,17 +249,16 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 onClick={toggleWheelCollapsed}
-                className="md:hidden flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
+                className="md:hidden flex items-center justify-center gap-2 py-2 px-6 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors"
                 style={{ 
                   position: 'absolute',
                   bottom: 0,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  minHeight: '56px',
                 }}
               >
-                <ChevronUp size={24} />
-                <span className="text-base font-medium">Show Menu</span>
+                <ChevronUp size={20} />
+                <span className="text-sm font-medium">Show Menu</span>
               </motion.button>
             )}
           </AnimatePresence>
@@ -350,15 +346,7 @@ export default function HomePage() {
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: ANIMATION_DURATION }}
-                translate="no"
-                style={{
-                  fontSize: '24px',
-                  color: '#4b5563',
-                  fontWeight: 300,
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  borderBottom: 'none',
-                }}
+                className="text-2xl text-gray-600 font-light text-center"
               >
                 Hi. Let&apos;s play!
               </motion.p>

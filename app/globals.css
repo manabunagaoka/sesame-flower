@@ -80,11 +80,6 @@ body {
   width: 100%;
   top: 0;
   left: 0;
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  -moz-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -176,21 +171,5 @@ a {
   .wheel-container {
     width: min(50vh, 450px);
     height: min(50vh, 450px);
-  }
-}
-
-/* Mobile landscape: give wheel section proper dimensions and allow scroll */
-@media screen and (max-width: 896px) and (orientation: landscape) {
-  .wheel-section {
-    min-width: 45vw !important;
-    max-width: 45vw !important;
-    overflow: auto !important;
-    padding: 10px !important;
-  }
-  
-  .wheel-container {
-    width: 280px !important;
-    height: 280px !important;
-    flex-shrink: 0 !important;
   }
 }

@@ -174,42 +174,10 @@ a {
   }
 }
 
-/* Landscape orientation warning for mobile */
+/* Mobile landscape: smaller wheel to fit */
 @media screen and (max-width: 896px) and (orientation: landscape) {
-  body::before {
-    content: '📱 Please rotate your device to portrait mode';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 500;
-    z-index: 99999;
-    text-align: center;
-    padding: 20px;
-  }
-  
-  /* Hide content in landscape */
-  #__next {
-    visibility: hidden;
-  }
-}
-
-/* Allow landscape for video fullscreen */
-@media screen and (max-width: 896px) and (orientation: landscape) {
-  body:has(video:fullscreen)::before,
-  body:has(iframe:fullscreen)::before {
-    display: none;
-  }
-  
-  body:has(video:fullscreen) #__next,
-  body:has(iframe:fullscreen) #__next {
-    visibility: visible;
+  .wheel-container {
+    width: min(40vh, 280px);
+    height: min(40vh, 280px);
   }
 }

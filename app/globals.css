@@ -185,17 +185,19 @@ a {
   }
 }
 
-/* Mobile landscape: give wheel section proper width and use CSS scale */
+/* Mobile landscape: give wheel section proper width */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-section {
-    min-width: 50vw !important;
-    max-width: 50vw !important;
+    min-width: 45vw !important;
+    max-width: 45vw !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   
   .wheel-container {
-    width: 280px !important;
-    height: 280px !important;
-    transform: scale(0.6);
-    transform-origin: center center;
+    width: 220px !important;
+    height: 220px !important;
+    transform: none !important;
   }
 }

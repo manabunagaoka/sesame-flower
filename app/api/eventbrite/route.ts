@@ -37,8 +37,20 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     
+    // Define event type for Eventbrite response
+    interface EventbriteEvent {
+      category_id?: string;
+      name?: { text?: string };
+      description?: { text?: string };
+      start?: { local?: string };
+      url?: string;
+      logo?: { url?: string };
+      venue?: { name?: string };
+      is_free?: boolean;
+    }
+    
     // Transform Eventbrite events to our format
-    const events = data.events?.map((event: any) => ({
+    const events = data.events?.map((event: EventbriteEvent) => ({
       icon: getCategoryIcon(event.category_id),
       title: event.name?.text || 'Untitled Event',
       description: event.description?.text?.substring(0, 100) || '',

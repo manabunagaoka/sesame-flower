@@ -21,6 +21,8 @@ export interface ContentItem {
   eventUrl?: string;           // For external event links (Eventbrite, etc.)
   venue?: string;              // Event venue name
   isFree?: boolean;            // Whether event is free
+  isCustom?: boolean;          // Whether this is a custom/school event
+  date?: string;               // ISO date for sorting
 }
 
 // For menus with tabs/categories (like Learning)

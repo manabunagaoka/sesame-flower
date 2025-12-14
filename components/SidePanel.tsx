@@ -115,9 +115,26 @@ export default function SidePanel({
                 borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
               }}
             >
-              <h2 className="text-xl font-semibold text-gray-800 capitalize">
-                {isChat ? 'Speak with Flower' : title}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-800 capitalize">
+                  {isChat ? 'Speak with Flower' : title}
+                </h2>
+                {title === 'activities' && (
+                  <button
+                    onClick={() => {
+                      // Open add event modal
+                      const event = prompt('Enter event details (title):');
+                      if (event) {
+                        alert('Event creation coming soon! For now, events are managed via API.');
+                      }
+                    }}
+                    className="ml-2 px-2 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center gap-1"
+                  >
+                    <Plus size={12} />
+                    Add
+                  </button>
+                )}
+              </div>
               <button
                 onClick={onClose}
                 className={clsx(
@@ -223,15 +240,22 @@ export default function SidePanel({
                         </div>
                       ) : (
                         <div className={clsx(
-                          'flex items-center justify-center',
-                          'w-12 h-12 bg-gray-50 rounded-full',
+                          'flex items-center justify-center relative',
+                          'w-12 h-12 rounded-full',
+                          item.isCustom ? 'bg-green-50' : 'bg-gray-50',
                           'group-hover:bg-gray-100 transition-colors duration-200'
                         )}>
                           {IconComponent && (
                             <IconComponent 
                               size={20} 
-                              className="text-gray-600" 
+                              className={item.isCustom ? 'text-green-600' : 'text-gray-600'}
                             />
+                          )}
+                          {/* School badge for custom events */}
+                          {item.isCustom && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-[8px]">🏫</span>
+                            </span>
                           )}
                         </div>
                       )}
@@ -239,9 +263,16 @@ export default function SidePanel({
                       {/* Content */}
                       <div className="ml-4 flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-base font-medium text-gray-900 truncate">
-                            {item.title}
-                          </h3>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h3 className="text-base font-medium text-gray-900 truncate">
+                              {item.title}
+                            </h3>
+                            {item.isCustom && (
+                              <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded font-medium">
+                                School
+                              </span>
+                            )}
+                          </div>
                           {item.time && (
                             <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                               {item.time}

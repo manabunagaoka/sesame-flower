@@ -37,13 +37,13 @@ export default function HomePage() {
   const isMenuOpen = menuState !== 'closed';
   const currentMenuItems = menuState === 'more' ? MORE_MENU_ITEMS : MAIN_MENU_ITEMS;
 
-  // Fetch activities from Eventbrite API
-  const fetchActivities = async () => {
-    if (dynamicActivities !== null) return; // Already fetched
+  // Fetch activities from combined API (custom + external events)
+  const fetchActivities = async (forceRefresh = false) => {
+    if (dynamicActivities !== null && !forceRefresh) return; // Already fetched
     
     setActivitiesLoading(true);
     try {
-      const response = await fetch('/api/eventbrite?location=Cancun,Mexico');
+      const response = await fetch('/api/activities?location=Cancun,Mexico');
       const data = await response.json();
       if (data.events && data.events.length > 0) {
         setDynamicActivities(data.events);

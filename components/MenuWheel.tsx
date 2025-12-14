@@ -21,7 +21,8 @@ import {
   AudioLines,
   MessageCircleHeart,
   Gamepad2,
-  MonitorPlay
+  MonitorPlay,
+  Award
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MAIN_MENU_ITEMS, MORE_MENU_ITEMS, MENU_RADIUS, MENU_BUTTON_SIZE, ANIMATION_DURATION, STAGGER_DELAY } from '@/lib/constants';
@@ -47,6 +48,7 @@ const iconMap = {
   MessageCircleHeart,
   Gamepad2,
   MonitorPlay,
+  Award,
 };
 
 interface MenuWheelProps {

@@ -44,11 +44,11 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   },
   {
     id: 'schedule',
-    title: 'Schedule',
-    icon: 'Clock',
+    title: 'Rewards',
+    icon: 'Award',
     color: '#f368e0',
     borderColor: '#e84393',
-    angle: 225, // 7:30 position
+    angle: 270, // 9 o'clock
   },
   {
     id: 'activities',
@@ -56,7 +56,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     icon: 'Calendar',
     color: '#26de81',
     borderColor: '#20bf6b',
-    angle: 270, // 9 o'clock
+    angle: 225, // 7:30 position
   },
   {
     id: 'market',
@@ -295,28 +295,9 @@ export const MENU_CONTENT: MenuContent = {
   ],
   schedule: [
     {
-      icon: 'GraduationCap',
-      title: '9AM School',
-      description: 'Drop-off at Elementary',
-      time: '9:00 AM',
-    },
-    {
-      icon: 'Stethoscope',
-      title: '2PM Doctor',
-      description: 'Pediatrician appointment',
-      time: '2:00 PM',
-    },
-    {
-      icon: 'Zap',
-      title: '3:30PM Soccer',
-      description: 'Practice at field #2',
-      time: '3:30 PM',
-    },
-    {
-      icon: 'UtensilsCrossed',
-      title: '6PM Dinner',
-      description: 'Family dinner time',
-      time: '6:00 PM',
+      icon: 'Award',
+      title: 'Coming Soon',
+      description: 'Rewards and garden features coming',
     },
   ],
   games: [

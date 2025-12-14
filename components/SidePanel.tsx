@@ -8,7 +8,7 @@ import {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay, Gamepad2
+  MonitorPlay, Gamepad2, Award
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ContentItem, TabbedContent, isTabbedContent } from '@/lib/types';
@@ -21,7 +21,7 @@ const contentIconMap = {
   Sparkles, Car, UtensilsCrossed, BookOpen, Palette, Trees, Book, Music,
   Plus, Search, Shield, FileText, GraduationCap, Zap, PenTool, User,
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart,
-  MonitorPlay, Gamepad2
+  MonitorPlay, Gamepad2, Award
 };
 
 interface SidePanelProps {

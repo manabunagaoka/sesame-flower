@@ -322,10 +322,10 @@ export const MENU_CONTENT: MenuContent = {
   games: [
     {
       icon: 'Gamepad2',
-      title: 'Elmo\'s World Games',
-      description: 'Play fun games with Elmo',
-      gameUrl: 'https://www.sesamestreet.org/games?id=28013',
-      thumbnail: 'https://cms-tc.pbskids.org/sesame/Elmos_World_Games_MainImage.jpg',
+      title: 'Sesame Street Games',
+      description: 'Play fun games with your favorite characters',
+      gameUrl: 'https://www.sesamestreet.org/games',
+      thumbnail: '/thumb/game.jpg',
     },
     {
       icon: 'PlayCircle',

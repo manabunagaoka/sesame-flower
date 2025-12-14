@@ -17,8 +17,22 @@ export interface ContentItem {
   thumbnail?: string;
 }
 
+// For menus with tabs/categories (like Learning)
+export interface TabbedContent {
+  tabs: {
+    id: string;
+    label: string;
+    items: ContentItem[];
+  }[];
+}
+
 export interface MenuContent {
-  [key: string]: ContentItem[];
+  [key: string]: ContentItem[] | TabbedContent;
+}
+
+// Helper to check if content is tabbed
+export function isTabbedContent(content: ContentItem[] | TabbedContent): content is TabbedContent {
+  return (content as TabbedContent).tabs !== undefined;
 }
 
 export interface MenuWheelProps {

@@ -173,43 +173,65 @@ export const MENU_CONTENT: MenuContent = {
       description: 'Local parent meetups',
     },
   ],
-  learning: [
-    {
-      icon: 'PlayCircle',
-      title: 'Sunny Day',
-      description: 'Educational content',
-      videoId: 'db1gg8uttq',
-      thumbnail: 'https://embed-ssl.wistia.com/deliveries/358950907ded006a78fdd2eb9270f7f591c75aa7.jpg?image_crop_resized=960x540',
-    },
-    {
-      icon: 'PlayCircle',
-      title: 'Letter of the Day',
-      description: 'Learning letters with friends',
-      videoId: 'zlysy8w3hj',
-      thumbnail: 'https://embed-ssl.wistia.com/deliveries/0e710e0c2894919b0f99c872addf96e065584c46.jpg?image_crop_resized=960x540',
-    },
-    {
-      icon: 'PlayCircle',
-      title: 'Dinosaurs - Elmo\'s World',
-      description: 'Learn about dinosaurs',
-      videoId: '25hcausk6n',
-      thumbnail: 'https://embed-ssl.wistia.com/deliveries/b8848a693dd12311533b49f81890fed4adbc01b4.jpg?image_crop_resized=640x360',
-    },
-    {
-      icon: 'PlayCircle',
-      title: 'Verbs - The Yip Yips',
-      description: 'Learning action words',
-      videoId: 'zqtrw5c0ft',
-      thumbnail: 'https://embed-ssl.wistia.com/deliveries/b02e79d591cd470d164f9a170e05dd026986f155.jpg?image_crop_resized=640x360',
-    },
-    {
-      icon: 'PlayCircle',
-      title: 'Mystery Word',
-      description: 'Word discovery game',
-      videoId: '6jwhzsz4vw',
-      thumbnail: 'https://embed-ssl.wistia.com/deliveries/a7decce16a3307c9a3bc11de2b08b296a1bbad08.jpg?image_crop_resized=960x540',
-    },
-  ],
+  learning: {
+    tabs: [
+      {
+        id: 'social-emotional',
+        label: 'Social Emotional',
+        items: [
+          // Videos coming soon
+        ],
+      },
+      {
+        id: 'english',
+        label: 'English',
+        items: [
+          {
+            icon: 'PlayCircle',
+            title: 'Sunny Day',
+            description: 'Educational content',
+            videoId: 'db1gg8uttq',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/358950907ded006a78fdd2eb9270f7f591c75aa7.jpg?image_crop_resized=960x540',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'Letter of the Day',
+            description: 'Learning letters with friends',
+            videoId: 'zlysy8w3hj',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/0e710e0c2894919b0f99c872addf96e065584c46.jpg?image_crop_resized=960x540',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'Dinosaurs - Elmo\'s World',
+            description: 'Learn about dinosaurs',
+            videoId: '25hcausk6n',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/b8848a693dd12311533b49f81890fed4adbc01b4.jpg?image_crop_resized=640x360',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'Verbs - The Yip Yips',
+            description: 'Learning action words',
+            videoId: 'zqtrw5c0ft',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/b02e79d591cd470d164f9a170e05dd026986f155.jpg?image_crop_resized=640x360',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'Mystery Word',
+            description: 'Word discovery game',
+            videoId: '6jwhzsz4vw',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/a7decce16a3307c9a3bc11de2b08b296a1bbad08.jpg?image_crop_resized=960x540',
+          },
+        ],
+      },
+      {
+        id: 'training',
+        label: 'Training',
+        items: [
+          // Training videos coming soon
+        ],
+      },
+    ],
+  },
   activities: [
     {
       icon: 'Palette',

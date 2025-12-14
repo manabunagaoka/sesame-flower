@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { 
@@ -10,7 +10,7 @@ import {
   Building, ShoppingBag, DollarSign, PlayCircle, Grid3x3, MessageCircle, Mic, AudioLines, MessageCircleHeart
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { ContentItem } from '@/lib/types';
+import { ContentItem, TabbedContent, isTabbedContent } from '@/lib/types';
 import { ANIMATION_DURATION } from '@/lib/constants';
 import ChatInterface, { ChatMessage } from './ChatInterface';
 
@@ -26,7 +26,7 @@ interface SidePanelProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  content: ContentItem[];
+  content: ContentItem[] | TabbedContent;
   onContentSelect: (item: ContentItem) => void;
   // Chat state lifted from page for persistence
   chatMessages?: ChatMessage[];
@@ -44,6 +44,17 @@ export default function SidePanel({
 }: SidePanelProps) {
   const isConnect = title.toLowerCase() === 'connect';
   const isChat = title.toLowerCase() === 'chat';
+  const hasTabs = isTabbedContent(content);
+  
+  // For tabbed content, track selected tab
+  const [selectedTab, setSelectedTab] = useState<string>(
+    hasTabs ? content.tabs[0]?.id || '' : ''
+  );
+  
+  // Get current items to display
+  const displayItems: ContentItem[] = hasTabs
+    ? content.tabs.find(t => t.id === selectedTab)?.items || []
+    : content;
 
   // Show chat only for Chat tab, hide for other tabs
   const showChat = isChat;
@@ -116,12 +127,37 @@ export default function SidePanel({
 
             {/* Content */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Tabs for tabbed content */}
+              {hasTabs && !isChat && (
+                <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                  {(content as TabbedContent).tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setSelectedTab(tab.id)}
+                      className={clsx(
+                        'flex-1 py-3 px-2 text-sm font-medium transition-colors duration-200',
+                        selectedTab === tab.id
+                          ? 'text-green-600 border-b-2 border-green-600 bg-white'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
               {!isChat && (
               <div className={clsx(
                 'space-y-0',
                 showChat ? 'flex-shrink-0 overflow-y-auto max-h-48' : 'flex-1 overflow-y-auto'
               )}>
-                {content.map((item, index) => {
+                {displayItems.length === 0 ? (
+                  <div className="flex items-center justify-center h-32 text-gray-400">
+                    <p>Coming soon...</p>
+                  </div>
+                ) : (
+                displayItems.map((item, index) => {
                   const IconComponent = contentIconMap[item.icon as keyof typeof contentIconMap];
                   
                   return (
@@ -206,7 +242,8 @@ export default function SidePanel({
                       </div>
                     </motion.div>
                   );
-                })}
+                })
+                )}
               </div>
               )}
               

@@ -8,7 +8,7 @@ import TrackWheel from '@/components/TrackWheel';
 import SidePanel from '@/components/SidePanel';
 import { ChatMessage } from '@/components/ChatInterface';
 import { MENU_CONTENT, ANIMATION_DURATION, MAIN_MENU_ITEMS, MORE_MENU_ITEMS } from '@/lib/constants';
-import { MenuState, ContentItem } from '@/lib/types';
+import { MenuState, ContentItem, TabbedContent } from '@/lib/types';
 
 export default function HomePage() {
   const [menuState, setMenuState] = useState<MenuState>('closed');
@@ -16,7 +16,7 @@ export default function HomePage() {
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [sidePanelContent, setSidePanelContent] = useState<{
     title: string;
-    content: ContentItem[];
+    content: ContentItem[] | TabbedContent;
   }>({ title: '', content: [] });
   const [wheelAngle, setWheelAngle] = useState<number>(0);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);

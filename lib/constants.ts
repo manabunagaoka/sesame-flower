@@ -43,7 +43,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
     angle: 180, // 6 o'clock
   },
   {
-    id: 'schedule',
+    id: 'rewards',
     title: 'Rewards',
     icon: 'Award',
     color: '#f368e0',
@@ -293,7 +293,7 @@ export const MENU_CONTENT: MenuContent = {
       description: 'Talk with AI assistant',
     },
   ],
-  schedule: [
+  rewards: [
     {
       icon: 'Award',
       title: 'Coming Soon',

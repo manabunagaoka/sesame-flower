@@ -80,9 +80,17 @@ body {
   width: 100%;
   top: 0;
   left: 0;
-  touch-action: pan-x pan-y;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+/* Prevent any underlines on p tags */
+p {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
 
 body {

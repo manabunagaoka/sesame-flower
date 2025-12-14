@@ -185,14 +185,12 @@ a {
   }
 }
 
-/* Mobile landscape: scale down the wheel */
+/* Mobile landscape: let wheel container scroll if needed */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-container {
-    width: 280px !important;
-    height: 280px !important;
-    transform: scale(0.55);
-    transform-origin: center center;
-    margin-top: -60px;
-    margin-bottom: -60px;
+    width: min(45vh, 280px) !important;
+    height: min(45vh, 280px) !important;
+    transform: none;
+    overflow: visible;
   }
 }

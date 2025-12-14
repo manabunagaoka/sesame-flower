@@ -419,9 +419,15 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
-    // Initialize AudioContext on user interaction (required for mobile)
+    // Initialize AudioContext and GainNode on user interaction (required for mobile)
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    // Pre-create GainNode for consistent volume from first audio
+    if (!gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = 0.3;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
     }
     if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();

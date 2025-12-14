@@ -79,7 +79,8 @@ export async function GET(request: Request) {
 }
 
 // Map Eventbrite category IDs to icons
-function getCategoryIcon(categoryId: string): string {
+function getCategoryIcon(categoryId?: string): string {
+  if (!categoryId) return 'Calendar';
   const iconMap: Record<string, string> = {
     '115': 'Palette', // Family & Education
     '110': 'Music',   // Music
@@ -91,7 +92,7 @@ function getCategoryIcon(categoryId: string): string {
 }
 
 // Format event time
-function formatEventTime(dateString: string): string {
+function formatEventTime(dateString?: string): string {
   if (!dateString) return '';
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = {

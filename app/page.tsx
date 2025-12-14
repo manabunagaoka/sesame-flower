@@ -225,7 +225,7 @@ export default function HomePage() {
       </header>
       
       {/* Main Layout - Responsive: vertical on mobile, horizontal on tablet/desktop */}
-      <main className="flex-1 flex flex-col md:flex-row" style={{ minHeight: 0, overflow: 'hidden' }}>
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{ minHeight: 0 }}>
         
         {/* Wheel Container - Bottom on mobile (collapsible), Left on tablet/desktop */}
         <motion.div 
@@ -233,7 +233,6 @@ export default function HomePage() {
           style={{ 
             boxShadow: wheelCollapsed ? 'none' : '0 -4px 16px -4px rgba(0, 0, 0, 0.1)',
             borderTop: wheelCollapsed ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
-            overflow: 'visible',
           }}
           initial={false}
           animate={{ 

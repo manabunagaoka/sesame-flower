@@ -185,12 +185,12 @@ a {
   }
 }
 
-/* Mobile landscape: let wheel container scroll if needed */
+/* Mobile landscape: use much smaller container */
 @media screen and (max-width: 896px) and (orientation: landscape) {
   .wheel-container {
-    width: min(45vh, 280px) !important;
-    height: min(45vh, 280px) !important;
-    transform: none;
-    overflow: visible;
+    width: min(30vh, 180px) !important;
+    height: min(30vh, 180px) !important;
+    transform: scale(0.5);
+    transform-origin: center center;
   }
 }

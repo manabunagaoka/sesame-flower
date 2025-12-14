@@ -215,7 +215,7 @@ export default function HomePage() {
           borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
         }}
       >
-        <h1 className="text-xl font-semibold text-white">123 Sesame Street</h1>
+        <h1 className="text-xl font-semibold text-white" translate="no">123 Sesame Street</h1>
         <button className="p-2 hover:bg-green-600 rounded-lg transition-colors">
           <MoreVertical size={20} className="text-white" />
         </button>
@@ -347,6 +347,7 @@ export default function HomePage() {
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: ANIMATION_DURATION }}
+                translate="no"
                 style={{
                   fontSize: '24px',
                   color: '#4b5563',

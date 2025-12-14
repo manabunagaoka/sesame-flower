@@ -179,7 +179,34 @@ export const MENU_CONTENT: MenuContent = {
         id: 'social-emotional',
         label: 'Social Emotional',
         items: [
-          // Videos coming soon
+          {
+            icon: 'PlayCircle',
+            title: 'Count Me In',
+            description: 'G1-U1 Social Emotional Learning',
+            videoId: 'ieyzenmkx9',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/e69a000ab5dec0beebd865b8c6a5792a11084677.jpg?image_crop_resized=960x540',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'My Body My Brain',
+            description: 'G1-U1 Social Emotional Learning',
+            videoId: '8bbw9rk484',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/18cac187d5181daef08b029dca1ad7640fdc9cdc.jpg?image_crop_resized=960x540',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'Raise Your Hand',
+            description: 'G1-U1 Social Emotional Learning',
+            videoId: '7fo0gtroy3',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/7a513c123f06975016c2f8f37d5cd4afb4db094d.jpg?image_crop_resized=960x540',
+          },
+          {
+            icon: 'PlayCircle',
+            title: 'What Do You Like to Do',
+            description: 'G1-U1 Social Emotional Learning',
+            videoId: 'qobb6e37af',
+            thumbnail: 'https://embed-ssl.wistia.com/deliveries/8eb637bfb64873c03206d3705d8bd0ec626078a6.jpg?image_crop_resized=960x540',
+          },
         ],
       },
       {

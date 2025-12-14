@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, ChevronUp, MapPin } from 'lucide-react';
+import { MoreVertical, ChevronUp, MapPin, Sparkles, Calendar, Wallet } from 'lucide-react';
 import MenuWheel from '@/components/MenuWheel';
 import TrackWheel from '@/components/TrackWheel';
 import SidePanel from '@/components/SidePanel';
@@ -487,7 +487,7 @@ export default function HomePage() {
                       {/* Event Icon */}
                       <div className="flex justify-center">
                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                          <span className="text-4xl">🎉</span>
+                          <Sparkles size={40} className="text-white" />
                         </div>
                       </div>
                       
@@ -500,7 +500,7 @@ export default function HomePage() {
                       <div className="space-y-3 text-gray-600">
                         {selectedContent.time && (
                           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">📅</span>
+                            <Calendar size={24} className="text-gray-600" />
                             <div>
                               <p className="text-sm text-gray-500">Fecha y Hora</p>
                               <p className="font-medium text-gray-900">{selectedContent.time}</p>
@@ -527,7 +527,7 @@ export default function HomePage() {
                         
                         {selectedContent.isFree !== undefined && (
                           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">💰</span>
+                            <Wallet size={24} className="text-gray-600" />
                             <div>
                               <p className="text-sm text-gray-500">Precio</p>
                               <p className={`font-medium ${selectedContent.isFree ? 'text-green-600' : 'text-gray-900'}`}>

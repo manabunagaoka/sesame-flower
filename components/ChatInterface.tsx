@@ -86,8 +86,56 @@ export default function ChatInterface({
   const hasSpokenRef = useRef(false);
   const isListeningRef = useRef(false);
   const hasGreetedRef = useRef(false);
+  const audioUnlockedRef = useRef(false); // Track if iOS audio is unlocked
 
   const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator?.userAgent || '');
+
+  // Unlock audio on iOS - must be called during user gesture
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    
+    console.log('Unlocking audio for iOS...');
+    try {
+      // Create AudioContext if needed
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        console.log('Created AudioContext, state:', audioContextRef.current.state);
+      }
+      
+      const ctx = audioContextRef.current;
+      
+      // Resume if suspended
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          console.log('AudioContext resumed, state:', ctx.state);
+        });
+      }
+      
+      // Play silent buffer to fully unlock
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(0);
+      
+      // Also create and play a silent HTML5 Audio to unlock that path
+      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD//////////////////////////////////');
+      silentAudio.volume = 0.01;
+      silentAudio.play().catch(() => {});
+      
+      // Pre-create GainNode
+      if (!gainNodeRef.current) {
+        gainNodeRef.current = ctx.createGain();
+        gainNodeRef.current.gain.value = 0.3;
+        gainNodeRef.current.connect(ctx.destination);
+      }
+      
+      audioUnlockedRef.current = true;
+      console.log('Audio unlocked successfully');
+    } catch (e) {
+      console.error('Audio unlock failed:', e);
+    }
+  }, []);
 
   // Cleanup on mount/unmount
   useEffect(() => {
@@ -430,39 +478,13 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
-    // Initialize AudioContext on user interaction (CRITICAL for mobile)
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      console.log('Created new AudioContext');
-    }
+    // Ensure audio is unlocked (should already be from touch/click)
+    unlockAudio();
     
-    const ctx = audioContextRef.current;
-    
-    // Resume if suspended
-    if (ctx.state === 'suspended') {
-      console.log('AudioContext suspended, resuming...');
-      await ctx.resume();
-      console.log('AudioContext resumed, state:', ctx.state);
-    }
-    
-    // Play silent buffer to fully unlock audio on iOS Safari
-    // This must happen synchronously in the user gesture handler
-    try {
-      const silentBuffer = ctx.createBuffer(1, 1, 22050);
-      const silentSource = ctx.createBufferSource();
-      silentSource.buffer = silentBuffer;
-      silentSource.connect(ctx.destination);
-      silentSource.start(0);
-      console.log('Silent audio played to unlock AudioContext');
-    } catch (e) {
-      console.log('Silent unlock failed:', e);
-    }
-    
-    // Pre-create GainNode for consistent volume
-    if (!gainNodeRef.current) {
-      gainNodeRef.current = ctx.createGain();
-      gainNodeRef.current.gain.value = 0.3;
-      gainNodeRef.current.connect(ctx.destination);
+    // Extra safety: resume AudioContext if somehow still suspended
+    if (audioContextRef.current?.state === 'suspended') {
+      console.log('AudioContext still suspended in greetAndListen, resuming...');
+      await audioContextRef.current.resume();
     }
     
     // Fetch and play TTS (with 60s timeout for Render cold start)
@@ -597,12 +619,16 @@ export default function ChatInterface({
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%', 
-      backgroundColor: 'white'
-    }}>
+    <div 
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%', 
+        backgroundColor: 'white'
+      }}
+      onTouchStart={unlockAudio}
+      onClick={unlockAudio}
+    >
       {/* Header */}
       {chatMessages.length > 0 && (
         <div style={{ flexShrink: 0, padding: '8px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>

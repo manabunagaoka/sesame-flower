@@ -73,7 +73,6 @@ export default function ChatInterface({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null); // For consistent volume
-  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null); // For stopping Web Audio playback
   const conversationActive = useRef(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -86,56 +85,8 @@ export default function ChatInterface({
   const hasSpokenRef = useRef(false);
   const isListeningRef = useRef(false);
   const hasGreetedRef = useRef(false);
-  const audioUnlockedRef = useRef(false); // Track if iOS audio is unlocked
 
   const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator?.userAgent || '');
-
-  // Unlock audio on iOS - must be called during user gesture
-  const unlockAudio = useCallback(() => {
-    if (audioUnlockedRef.current) return;
-    
-    console.log('Unlocking audio for iOS...');
-    try {
-      // Create AudioContext if needed
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        console.log('Created AudioContext, state:', audioContextRef.current.state);
-      }
-      
-      const ctx = audioContextRef.current;
-      
-      // Resume if suspended
-      if (ctx.state === 'suspended') {
-        ctx.resume().then(() => {
-          console.log('AudioContext resumed, state:', ctx.state);
-        });
-      }
-      
-      // Play silent buffer to fully unlock
-      const buffer = ctx.createBuffer(1, 1, 22050);
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-      source.start(0);
-      
-      // Also create and play a silent HTML5 Audio to unlock that path
-      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD//////////////////////////////////');
-      silentAudio.volume = 0.01;
-      silentAudio.play().catch(() => {});
-      
-      // Pre-create GainNode
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = ctx.createGain();
-        gainNodeRef.current.gain.value = 0.3;
-        gainNodeRef.current.connect(ctx.destination);
-      }
-      
-      audioUnlockedRef.current = true;
-      console.log('Audio unlocked successfully');
-    } catch (e) {
-      console.error('Audio unlock failed:', e);
-    }
-  }, []);
 
   // Cleanup on mount/unmount
   useEffect(() => {
@@ -350,41 +301,40 @@ export default function ChatInterface({
               console.log('Transcription:', transcription);
               
               // Filter out likely hallucinations (common Whisper artifacts on silence/noise)
-              // Includes English and common foreign language artifacts
+              // Includes English and common foreign language artifacts from long silences
               const hallucinations = [
                 // English
                 'thank you', 'thanks', 'bye', 'goodbye', 'you', 'okay', 'ok', 'yes', 'no', 'um', 'uh', 'hmm', 'hm',
                 'thank you for watching', 'thanks for watching', 'see you next time', 'subscribe',
-                // Norwegian/Swedish/Danish
-                'takk', 'takk for', 'takk for at', 'takk for det', 'det var', 'det var så',
+                // Norwegian/Swedish/Danish (common Whisper artifacts)
+                'takk', 'takk for', 'takk for at', 'takk for det', 'det var', 'det var så', 'jeg', 'du', 'vi',
+                'tack', 'tack för', 'hej', 'hej då',
                 // Spanish
-                'gracias', 'adiós', 'adios', 'hasta luego',
-                // German
-                'danke', 'danke schön', 'tschüss', 'auf wiedersehen',
+                'gracias', 'adiós', 'adios', 'hasta luego', 'hola', 'sí', 'no',
+                // German  
+                'danke', 'danke schön', 'tschüss', 'auf wiedersehen', 'ja', 'nein',
                 // French
-                'merci', 'au revoir',
-                // Japanese
-                'ありがとう', 'さようなら',
-                // Chinese
-                '谢谢', '再见',
-                // Korean
-                '감사합니다', '안녕',
+                'merci', 'au revoir', 'bonjour', 'oui', 'non',
                 // Portuguese
-                'obrigado', 'obrigada', 'tchau',
+                'obrigado', 'obrigada', 'tchau', 'olá',
                 // Italian
                 'grazie', 'ciao', 'arrivederci',
                 // Dutch
-                'dank je', 'bedankt', 'tot ziens',
-                // Russian
-                'спасибо', 'до свидания',
-                // Arabic
-                'شكرا', 'مع السلامة',
+                'dank je', 'bedankt', 'tot ziens', 'ja', 'nee',
+                // Russian (transliterated)
+                'spasibo', 'da', 'net',
+                // Chinese pinyin
+                'xie xie', 'ni hao', 'zai jian',
+                // Korean romanized
+                'kamsahamnida', 'annyeong',
+                // Japanese romanized
+                'arigatou', 'sayounara', 'hai',
               ];
-              const cleanText = transcription.toLowerCase().trim().replace(/[.!?,]/g, '');
+              const cleanText = transcription.toLowerCase().trim().replace(/[.!?,。、！？]/g, '');
               
               // Check exact matches and prefix matches (for partial phrases)
               const isHallucination = hallucinations.includes(cleanText) || 
-                hallucinations.some(h => cleanText.startsWith(h)) ||
+                hallucinations.some(h => cleanText.startsWith(h + ' ') || cleanText === h) ||
                 transcription.length < 3;
               
               if (isHallucination) {
@@ -446,14 +396,7 @@ export default function ChatInterface({
       
       const cleanup = () => {
         setIsSpeaking(false);
-        audioSourceRef.current = null;
-        // Only restart if conversation is still active (user hasn't pressed stop)
-        if (conversationActive.current) {
-          console.log('Audio ended, restarting recording...');
-          setTimeout(() => startRecording(), 300);
-        } else {
-          console.log('Audio ended, conversation not active - not restarting');
-        }
+        if (conversationActive.current) setTimeout(() => startRecording(), 300);
         resolve();
       };
 
@@ -472,15 +415,14 @@ export default function ChatInterface({
         const audioBuffer = await ctx.decodeAudioData(data.buffer.slice(0) as ArrayBuffer);
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
-        audioSourceRef.current = source; // Store ref so we can stop it
         
         // Use GainNode for consistent volume across all audio
         if (!gainNodeRef.current) {
           gainNodeRef.current = ctx.createGain();
           gainNodeRef.current.connect(ctx.destination);
         }
-        // Always set gain value before playing to ensure consistent volume
-        gainNodeRef.current.gain.value = 0.3;
+        // Always set gain value before playing to ensure consistent volume (0.15 = 15%)
+        gainNodeRef.current.gain.value = 0.15;
         source.connect(gainNodeRef.current);
         
         source.onended = cleanup;
@@ -492,16 +434,15 @@ export default function ChatInterface({
       }
       
       // Fallback to HTML Audio
-      console.log('Falling back to HTML Audio element');
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.volume = 0.3; // Lower volume for mobile fallback
+      audio.volume = 0.15; // 15% volume for consistency
       audioRef.current = audio;
       
-      audio.onended = () => { console.log('HTML Audio ended'); URL.revokeObjectURL(url); cleanup(); };
-      audio.onerror = (e) => { console.error('HTML Audio error:', e); URL.revokeObjectURL(url); cleanup(); };
-      audio.play().catch((e) => { console.error('HTML Audio play() failed:', e); URL.revokeObjectURL(url); cleanup(); });
+      audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); cleanup(); };
+      audio.play().catch(() => { URL.revokeObjectURL(url); cleanup(); });
     });
   };
 
@@ -513,52 +454,46 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
-    // Ensure audio is unlocked (should already be from touch/click)
-    unlockAudio();
-    
-    // Extra safety: resume AudioContext if somehow still suspended
-    if (audioContextRef.current?.state === 'suspended') {
-      console.log('AudioContext still suspended in greetAndListen, resuming...');
+    // Initialize AudioContext and GainNode on user interaction (required for mobile)
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    // Pre-create GainNode for consistent volume from first audio
+    if (!gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = 0.15; // 15% volume
+      gainNodeRef.current.connect(audioContextRef.current.destination);
+    }
+    if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();
     }
     
-    // Fetch and play TTS (with 60s timeout for Render cold start)
+    // Fetch and play TTS
     setIsSpeaking(true);
-    console.log('Fetching TTS from:', VOICE_SERVICE_URL);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for cold start
-      
       const res = await fetch(`${VOICE_SERVICE_URL}/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: greeting }),
-        signal: controller.signal
+        body: JSON.stringify({ text: greeting })
       });
-      clearTimeout(timeoutId);
       
-      console.log('TTS response status:', res.status);
       if (res.ok) {
         const arrayBuffer = await res.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
-        console.log('TTS audio received, size:', data.length, 'bytes');
         
         // Use playAudio which handles Web Audio API
         await playAudio(data);
       } else {
-        console.error('TTS failed with status:', res.status);
         setIsSpeaking(false);
         if (conversationActive.current) startRecording();
       }
-    } catch (err) {
-      console.error('TTS fetch error:', err);
+    } catch {
       setIsSpeaking(false);
       if (conversationActive.current) startRecording();
     }
   };
 
   const stopAll = () => {
-    console.log('=== STOP ALL ===');
     conversationActive.current = false;
     isListeningRef.current = false;
     isProcessingVoiceRef.current = false;
@@ -570,11 +505,7 @@ export default function ChatInterface({
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    // Stop HTML Audio
     audioRef.current?.pause();
-    // Stop Web Audio source
-    try { audioSourceRef.current?.stop(); } catch {}
-    audioSourceRef.current = null;
   };
 
   const handleTextSubmit = async () => {
@@ -630,17 +561,13 @@ export default function ChatInterface({
     console.log('=== MIC CLICK ===', { isListening, isSpeaking, isProcessing, isTranscribing });
     
     if (isListening) {
-      console.log('Stopping listening...');
       conversationActive.current = false;
       streamRef.current?.getTracks().forEach(t => t.stop());
       streamRef.current = null;
       stopRecording();
     } else if (isSpeaking) {
-      console.log('Stopping speaking...');
       conversationActive.current = false;
       audioRef.current?.pause();
-      try { audioSourceRef.current?.stop(); } catch {}
-      audioSourceRef.current = null;
       setIsSpeaking(false);
     } else if (!isProcessing && !isTranscribing) {
       conversationActive.current = true;
@@ -654,16 +581,12 @@ export default function ChatInterface({
   };
 
   return (
-    <div 
-      style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100%', 
-        backgroundColor: 'white'
-      }}
-      onTouchStart={unlockAudio}
-      onClick={unlockAudio}
-    >
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      backgroundColor: 'white'
+    }}>
       {/* Header */}
       {chatMessages.length > 0 && (
         <div style={{ flexShrink: 0, padding: '8px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>

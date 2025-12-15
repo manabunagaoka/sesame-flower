@@ -350,9 +350,44 @@ export default function ChatInterface({
               console.log('Transcription:', transcription);
               
               // Filter out likely hallucinations (common Whisper artifacts on silence/noise)
-              const hallucinations = ['thank you', 'thanks', 'bye', 'goodbye', 'you', 'okay', 'ok', 'yes', 'no', 'um', 'uh'];
+              // Includes English and common foreign language artifacts
+              const hallucinations = [
+                // English
+                'thank you', 'thanks', 'bye', 'goodbye', 'you', 'okay', 'ok', 'yes', 'no', 'um', 'uh', 'hmm', 'hm',
+                'thank you for watching', 'thanks for watching', 'see you next time', 'subscribe',
+                // Norwegian/Swedish/Danish
+                'takk', 'takk for', 'takk for at', 'takk for det', 'det var', 'det var så',
+                // Spanish
+                'gracias', 'adiós', 'adios', 'hasta luego',
+                // German
+                'danke', 'danke schön', 'tschüss', 'auf wiedersehen',
+                // French
+                'merci', 'au revoir',
+                // Japanese
+                'ありがとう', 'さようなら',
+                // Chinese
+                '谢谢', '再见',
+                // Korean
+                '감사합니다', '안녕',
+                // Portuguese
+                'obrigado', 'obrigada', 'tchau',
+                // Italian
+                'grazie', 'ciao', 'arrivederci',
+                // Dutch
+                'dank je', 'bedankt', 'tot ziens',
+                // Russian
+                'спасибо', 'до свидания',
+                // Arabic
+                'شكرا', 'مع السلامة',
+              ];
               const cleanText = transcription.toLowerCase().trim().replace(/[.!?,]/g, '');
-              if (hallucinations.includes(cleanText) || transcription.length < 3) {
+              
+              // Check exact matches and prefix matches (for partial phrases)
+              const isHallucination = hallucinations.includes(cleanText) || 
+                hallucinations.some(h => cleanText.startsWith(h)) ||
+                transcription.length < 3;
+              
+              if (isHallucination) {
                 console.log('Filtered likely hallucination:', transcription);
                 // Don't add to chat, just continue to listening
                 if (conversationActive.current) setTimeout(() => startRecording(), 500);

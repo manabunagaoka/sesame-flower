@@ -73,6 +73,7 @@ export default function ChatInterface({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null); // For consistent volume
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null); // For stopping Web Audio playback
   const conversationActive = useRef(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -362,7 +363,14 @@ export default function ChatInterface({
       
       const cleanup = () => {
         setIsSpeaking(false);
-        if (conversationActive.current) setTimeout(() => startRecording(), 300);
+        audioSourceRef.current = null;
+        // Only restart if conversation is still active (user hasn't pressed stop)
+        if (conversationActive.current) {
+          console.log('Audio ended, restarting recording...');
+          setTimeout(() => startRecording(), 300);
+        } else {
+          console.log('Audio ended, conversation not active - not restarting');
+        }
         resolve();
       };
 
@@ -381,6 +389,7 @@ export default function ChatInterface({
         const audioBuffer = await ctx.decodeAudioData(data.buffer.slice(0) as ArrayBuffer);
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
+        audioSourceRef.current = source; // Store ref so we can stop it
         
         // Use GainNode for consistent volume across all audio
         if (!gainNodeRef.current) {
@@ -471,6 +480,7 @@ export default function ChatInterface({
   };
 
   const stopAll = () => {
+    console.log('=== STOP ALL ===');
     conversationActive.current = false;
     isListeningRef.current = false;
     isProcessingVoiceRef.current = false;
@@ -482,7 +492,11 @@ export default function ChatInterface({
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    // Stop HTML Audio
     audioRef.current?.pause();
+    // Stop Web Audio source
+    try { audioSourceRef.current?.stop(); } catch {}
+    audioSourceRef.current = null;
   };
 
   const handleTextSubmit = async () => {
@@ -538,13 +552,17 @@ export default function ChatInterface({
     console.log('=== MIC CLICK ===', { isListening, isSpeaking, isProcessing, isTranscribing });
     
     if (isListening) {
+      console.log('Stopping listening...');
       conversationActive.current = false;
       streamRef.current?.getTracks().forEach(t => t.stop());
       streamRef.current = null;
       stopRecording();
     } else if (isSpeaking) {
+      console.log('Stopping speaking...');
       conversationActive.current = false;
       audioRef.current?.pause();
+      try { audioSourceRef.current?.stop(); } catch {}
+      audioSourceRef.current = null;
       setIsSpeaking(false);
     } else if (!isProcessing && !isTranscribing) {
       conversationActive.current = true;

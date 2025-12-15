@@ -430,18 +430,39 @@ export default function ChatInterface({
     setChatMessages([{ id: generateMessageId(), text: greeting, sender: 'ai', timestamp: ts }]);
     setAnimatingMessageId(ts);
     
-    // Initialize AudioContext and GainNode on user interaction (required for mobile)
+    // Initialize AudioContext on user interaction (CRITICAL for mobile)
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      console.log('Created new AudioContext');
     }
-    // Pre-create GainNode for consistent volume from first audio
-    if (!gainNodeRef.current && audioContextRef.current) {
-      gainNodeRef.current = audioContextRef.current.createGain();
+    
+    const ctx = audioContextRef.current;
+    
+    // Resume if suspended
+    if (ctx.state === 'suspended') {
+      console.log('AudioContext suspended, resuming...');
+      await ctx.resume();
+      console.log('AudioContext resumed, state:', ctx.state);
+    }
+    
+    // Play silent buffer to fully unlock audio on iOS Safari
+    // This must happen synchronously in the user gesture handler
+    try {
+      const silentBuffer = ctx.createBuffer(1, 1, 22050);
+      const silentSource = ctx.createBufferSource();
+      silentSource.buffer = silentBuffer;
+      silentSource.connect(ctx.destination);
+      silentSource.start(0);
+      console.log('Silent audio played to unlock AudioContext');
+    } catch (e) {
+      console.log('Silent unlock failed:', e);
+    }
+    
+    // Pre-create GainNode for consistent volume
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = ctx.createGain();
       gainNodeRef.current.gain.value = 0.3;
-      gainNodeRef.current.connect(audioContextRef.current.destination);
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume();
+      gainNodeRef.current.connect(ctx.destination);
     }
     
     // Fetch and play TTS (with 60s timeout for Render cold start)

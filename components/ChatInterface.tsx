@@ -85,6 +85,7 @@ export default function ChatInterface({
   const hasSpokenRef = useRef(false);
   const isListeningRef = useRef(false);
   const hasGreetedRef = useRef(false);
+  const silenceCountRef = useRef(0); // Count consecutive silences/hallucinations
 
   const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator?.userAgent || '');
 
@@ -310,7 +311,7 @@ export default function ChatInterface({
                 'takk', 'takk for', 'takk for at', 'takk for det', 'det var', 'det var så', 'jeg', 'du', 'vi',
                 'tack', 'tack för', 'hej', 'hej då',
                 // Spanish
-                'gracias', 'adiós', 'adios', 'hasta luego', 'hola', 'sí', 'no',
+                'gracias', 'adiós', 'adios', 'hasta luego', 'hola', 'sí',
                 // German  
                 'danke', 'danke schön', 'tschüss', 'auf wiedersehen', 'ja', 'nein',
                 // French
@@ -320,7 +321,7 @@ export default function ChatInterface({
                 // Italian
                 'grazie', 'ciao', 'arrivederci',
                 // Dutch
-                'dank je', 'bedankt', 'tot ziens', 'ja', 'nee',
+                'dank je', 'bedankt', 'tot ziens', 'nee',
                 // Russian (transliterated)
                 'spasibo', 'da', 'net',
                 // Chinese pinyin
@@ -339,11 +340,47 @@ export default function ChatInterface({
               
               if (isHallucination) {
                 console.log('Filtered likely hallucination:', transcription);
-                // Don't add to chat, just continue to listening
+                silenceCountRef.current++;
+                
+                // After 2 consecutive silences/hallucinations, prompt the user
+                if (silenceCountRef.current >= 2) {
+                  console.log('Multiple silences detected, prompting user...');
+                  silenceCountRef.current = 0; // Reset counter
+                  
+                  // Detect language from recent conversation
+                  const recentMessages = chatMessagesRef.current.slice(-4);
+                  const conversationText = recentMessages.map(m => m.text).join(' ').toLowerCase();
+                  
+                  // Simple language detection based on common words
+                  let promptMessage = "Hey, are you still there? If you want to chat, I'm here! Or press stop when you're done - it's good for the planet! 🌱";
+                  
+                  if (/hola|¿cómo|estás|qué|buenos|buenas|gracias/.test(conversationText)) {
+                    promptMessage = "¿Hola? ¿Sigues ahí? Si quieres platicar, aquí estoy. Si ya terminaste, presiona el botón de parar - ¡es bueno para el planeta! 🌱";
+                  } else if (/こんにちは|おはよう|ありがとう|です|ます/.test(conversationText)) {
+                    promptMessage = "もしもし？まだいますか？話したいことがあれば、ここにいますよ！終わったらストップボタンを押してね - 地球に優しいです！ 🌱";
+                  } else if (/你好|谢谢|怎么|什么|吃/.test(conversationText)) {
+                    promptMessage = "喂？你还在吗？想聊天的话，我在这里！如果结束了，按停止按钮 - 环保又节能！ 🌱";
+                  }
+                  
+                  const ts = Date.now();
+                  setChatMessages(prev => [...prev, { id: generateMessageId(), text: promptMessage, sender: 'ai', timestamp: ts }]);
+                  setAnimatingMessageId(ts);
+                  
+                  // Stop the conversation - user needs to tap mic again
+                  conversationActive.current = false;
+                  setIsTranscribing(false);
+                  setIsListening(false);
+                  return;
+                }
+                
+                // Otherwise just continue listening
                 if (conversationActive.current) setTimeout(() => startRecording(), 500);
                 setIsTranscribing(false);
                 return;
               }
+              
+              // Valid transcription - reset silence counter
+              silenceCountRef.current = 0;
               
               setChatMessages(prev => [...prev, { id: generateMessageId(), text: transcription, sender: 'user', timestamp: Date.now() }]);
               setIsTranscribing(false);

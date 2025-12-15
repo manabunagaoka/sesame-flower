@@ -400,15 +400,16 @@ export default function ChatInterface({
       }
       
       // Fallback to HTML Audio
+      console.log('Falling back to HTML Audio element');
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audio.volume = 0.3; // Lower volume for mobile fallback
       audioRef.current = audio;
       
-      audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); cleanup(); };
-      audio.play().catch(() => { URL.revokeObjectURL(url); cleanup(); });
+      audio.onended = () => { console.log('HTML Audio ended'); URL.revokeObjectURL(url); cleanup(); };
+      audio.onerror = (e) => { console.error('HTML Audio error:', e); URL.revokeObjectURL(url); cleanup(); };
+      audio.play().catch((e) => { console.error('HTML Audio play() failed:', e); URL.revokeObjectURL(url); cleanup(); });
     });
   };
 
@@ -434,26 +435,36 @@ export default function ChatInterface({
       await audioContextRef.current.resume();
     }
     
-    // Fetch and play TTS
+    // Fetch and play TTS (with 60s timeout for Render cold start)
     setIsSpeaking(true);
+    console.log('Fetching TTS from:', VOICE_SERVICE_URL);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for cold start
+      
       const res = await fetch(`${VOICE_SERVICE_URL}/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: greeting })
+        body: JSON.stringify({ text: greeting }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       
+      console.log('TTS response status:', res.status);
       if (res.ok) {
         const arrayBuffer = await res.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
+        console.log('TTS audio received, size:', data.length, 'bytes');
         
         // Use playAudio which handles Web Audio API
         await playAudio(data);
       } else {
+        console.error('TTS failed with status:', res.status);
         setIsSpeaking(false);
         if (conversationActive.current) startRecording();
       }
-    } catch {
+    } catch (err) {
+      console.error('TTS fetch error:', err);
       setIsSpeaking(false);
       if (conversationActive.current) startRecording();
     }

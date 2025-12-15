@@ -458,8 +458,8 @@ export default function ChatInterface({
           gainNodeRef.current = ctx.createGain();
           gainNodeRef.current.connect(ctx.destination);
         }
-        // Always set gain value before playing to ensure consistent volume (0.15 = 15%)
-        gainNodeRef.current.gain.value = 0.15;
+        // Always set gain value before playing to ensure consistent volume (0.10 = 10%)
+        gainNodeRef.current.gain.value = 0.10;
         source.connect(gainNodeRef.current);
         
         source.onended = cleanup;
@@ -474,7 +474,7 @@ export default function ChatInterface({
       const blob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.volume = 0.15; // 15% volume for consistency
+      audio.volume = 0.10; // 10% volume for consistency
       audioRef.current = audio;
       
       audio.onended = () => { URL.revokeObjectURL(url); cleanup(); };
@@ -498,7 +498,7 @@ export default function ChatInterface({
     // Pre-create GainNode for consistent volume from first audio
     if (!gainNodeRef.current && audioContextRef.current) {
       gainNodeRef.current = audioContextRef.current.createGain();
-      gainNodeRef.current.gain.value = 0.15; // 15% volume
+      gainNodeRef.current.gain.value = 0.10; // 10% volume
       gainNodeRef.current.connect(audioContextRef.current.destination);
     }
     if (audioContextRef.current.state === 'suspended') {

@@ -246,7 +246,7 @@ export default function HomePage() {
           onTouchStart={handleWheelTouchStart}
           onTouchEnd={handleWheelTouchEnd}
         >
-          {/* Pull-up handle when collapsed (mobile only) */}
+          {/* Pull-up handle when collapsed */}
           <AnimatePresence>
             {wheelCollapsed && (
               <motion.button
@@ -254,7 +254,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 onClick={toggleWheelCollapsed}
-                className="md:hidden fixed flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors z-50"
+                className="fixed flex items-center justify-center gap-2 py-4 px-8 bg-green-500 hover:bg-green-600 text-white rounded-t-2xl shadow-lg transition-colors z-50 cursor-pointer"
                 style={{ 
                   bottom: 0,
                   left: '50%',
@@ -280,11 +280,15 @@ export default function HomePage() {
             className="md:!opacity-100 md:!scale-100 md:!h-auto p-4"
             style={{ overflow: 'hidden' }}
           >
-            {/* Swipe hint indicator (mobile only, when expanded) */}
-            {!wheelCollapsed && selectedContent && (
-              <div className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 z-10">
-                <div className="w-10 h-1 bg-gray-300 rounded-full" />
-              </div>
+            {/* Pull-down handle - clickable to hide wheel */}
+            {!wheelCollapsed && (
+              <button 
+                onClick={toggleWheelCollapsed}
+                className="absolute top-0 left-1/2 -translate-x-1/2 z-10 p-2 cursor-pointer hover:bg-gray-100 rounded-b-lg transition-colors group"
+                title="Hide menu"
+              >
+                <div className="w-10 h-1.5 bg-gray-300 group-hover:bg-gray-400 rounded-full transition-colors" />
+              </button>
             )}
             
             {/* Wheel size: responsive to viewport but capped */}

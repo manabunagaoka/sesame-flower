@@ -280,11 +280,11 @@ export default function HomePage() {
             className="md:!opacity-100 md:!scale-100 md:!h-auto p-4"
             style={{ overflow: 'hidden' }}
           >
-            {/* Pull-down handle - clickable to hide wheel */}
+            {/* Pull-down handle - clickable to hide wheel (mobile only) */}
             {!wheelCollapsed && (
               <button 
                 onClick={toggleWheelCollapsed}
-                className="absolute top-0 left-1/2 -translate-x-1/2 z-10 p-2 cursor-pointer hover:bg-gray-100 rounded-b-lg transition-colors group"
+                className="absolute top-0 left-1/2 -translate-x-1/2 z-10 p-2 cursor-pointer hover:bg-gray-100 rounded-b-lg transition-colors group md:hidden"
                 title="Hide menu"
               >
                 <div className="w-10 h-1.5 bg-gray-300 group-hover:bg-gray-400 rounded-full transition-colors" />
